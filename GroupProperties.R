@@ -18,7 +18,7 @@ GrA=vector()
 
 
 ############Ananalyze a subset###################
-range=908:1238
+range=1510:1845
 dat=dat[dat$Frame>=range[1] & dat$Frame <= range[length(range)],]
 num_iter = length(unique(dat$Frame))
 
@@ -131,11 +131,11 @@ head(pairAsso)
 #write.csv(file="pairAsso.csv",x=pairAsso)
 
 #select a pair
-p1=1330
+p1=1053
 p2=1281
 #plot time-series for pair-wise distances
 attach(pairAsso)
-dvec=as.data.frame(pairAsso[(id2==p1)&(id1==p2),c('dist','ts')])
+dvec=as.data.frame(pairAsso[(id2==p2)&(id1==p1),c('dist','ts')])
 head(dvec)
 
 spee=as.data.frame(speeData[(speeData$idd==p1),c('dis','df.Frame.x')])
