@@ -4,9 +4,10 @@
 library(sp)
 library(adehabitatHR)
 library(spatstat)  
+library(changepoint)
 fname <- file.choose()
 dat = read.csv(fname, header=TRUE)
-View(dat)
+#View(dat)
 dat_out=data.frame()
 annd=vector()
 Avel=vector()
@@ -14,57 +15,69 @@ pol=vector()
 AvSpI = vector()
 AvND=vector()
 GrA=vector()
-
-
+mnnd=vector()  #median nearest neighbour distance (might be a better metric than annd in our case)
+medSpI=vector()
+elon=vector()
+Tilt=vector()
+##User-input (input the frame number for visual response)
+cp=4500
 
 ############Ananalyze a subset###################
-range=1510:1845
-dat=dat[dat$Frame>=range[1] & dat$Frame <= range[length(range)],]
-num_iter = length(unique(dat$Frame))
+range = unique(dat$Frame)
+#dat=dat[dat$Frame>=range[1] & dat$Frame <= range[length(range)],]
 
 
 dat$x=(dat$xmin+dat$xmax)/2
 dat$y=(dat$ymin+dat$ymax)/2
 ##################################################################################
 ###Group stucture ########################################################
-for(i in 1:num_iter){
-i_dat = dat[dat$Frame==i-1,]
+for(i in 1:length(range)){
+i_dat = dat[dat$Frame==range[i],]
  
 
 ##Calculations for group level properties
   ##ANND
   annd[i]=mean(nndist(i_dat$x,i_dat$y))
-  #Average distance between individuals
-#   ndMat = matrix(ncol=nrow(i_dat), nrow=nrow(i_dat))
-#   sum=0
-#   for (k in 1:nrow(i_dat)){
-# 
-#     for (j in 1:nrow(i_dat)){
-#       ndMat[k,j] = sqrt(sum(( (i_dat$x[k] - i_dat$x[j])^2 ),( (i_dat$x[k] - i_dat$x[j])^2 )))
-#       if(j>k)
-#         sum=sum+ndMat[k,j]
-#   }}
-# AvND[i] = sum/nrow(i_dat)
-  #group spread (normalised by group size)
-xy <- data.frame('x'=i_dat$x,'y'=i_dat$y, 'id' = rep('a', nrow(i_dat)))
-coordinates(xy) <- xy[, c('x', 'y')]
- GrA[i] = (mcp(xy[, 'id'], percent = 98)[[2]])/(nrow(i_dat))
+  #median NND
+  mnnd[i]=median(nndist(i_dat$x,i_dat$y))
+
+  #group elongation
+  pc<-prcomp(i_dat[,c("x","y")], center = TRUE)
+  pcs=summary(pc)
+  pca1=max(pcs$importance[2,1],pcs$importance[2,2])
+  pca2=min(pcs$importance[2,1],pcs$importance[2,2])
+  elon[i]=1-pca2/pca1
+  ##Slope
+  pcSlope=pc$rotation["y","PC1"]/pc$rotation["x","PC1"]
+  
  ##Average group velocity
-  if(i<num_iter){
+  if(i<(length(range))){
     
-    i_dat1=dat[dat$Frame==(i+1),]
+    i_dat1=dat[dat$Frame==range[i+1],]
     Avel[i]=sqrt( ((mean(i_dat1$x)-mean(i_dat$x))^2) + ((mean(i_dat1$y)-mean(i_dat$y))^2) )
-    ## group polarisation
-    new_dat=merge(x=i_dat1,y=i_dat,by="Id")
+    #Tilt
+    AvelS = (mean(i_dat1$y)-mean(i_dat$y))/(mean(i_dat1$x)-mean(i_dat$x)) #Slope of group velocity
+    Tilt[i] =atan(AvelS)*180/pi - atan(pcSlope)*180/pi
+    
+    new_dat=merge(x=i_dat1,y=i_dat,by="ID")
     new_dat$vx=new_dat$x.y-new_dat$x.x
     new_dat$vy=new_dat$y.y-new_dat$y.x
     new_dat$vm=sqrt((new_dat$vx^2)+(new_dat$vy^2))
+
+    ## group polarisation
+    new_dat1 = new_dat[new_dat$vm != 0, ]
+    if((nrow(new_dat1) >= 10) & (nrow(new_dat)>10)){
+      #Average individual speed
+      AvSpI[i] = mean(new_dat$vm)
+      medSpI[i]=median(new_dat$vm)
     new_dat$vx=new_dat$vx/new_dat$vm
     new_dat$vy=new_dat$vy/new_dat$vm
     vmod=sqrt(((sum(new_dat$vx))^2)+((sum(new_dat$vy))^2))
     pol[i]=vmod/nrow(new_dat)
-    #Average individual speed
-    AvSpI[i] = mean(new_dat$vm)
+    }else{
+      pol[i] = -10
+    }
+
   }
   
 }
@@ -72,88 +85,73 @@ coordinates(xy) <- xy[, c('x', 'y')]
 
 ##Plots
 
-# ANND time-series
-plot(annd,type="b")
-#Average group velocity time-series
-plot(Avel,type="b")
-#Polarity time-series
-plot(pol,type="b")
-#Average individual speed
-plot(AvSpI,type="b")
-#Group spread time-series
-plot(GrA,type="b")
+###################Group properties#############################################
+loc=seq(1,range[length(range)],by=1000)
 
-####################################################################################################################################
-##Check for signatures of harassers in their paiwise distance time-series
-#########################################################################################
+# median NND time-series
+mnnd=na.omit(mnnd)
+mvalue=cpt.mean(mnnd, method="BinSeg",Q=4,penalty="None")
+plot(mvalue,ylab="median NND",xlab="Frame number",xaxt="n")
+mtext(text=range[loc],side=1,at=loc)
+abline(v=cp,col="red")
 
-speeData = data.frame()
-##calculate individual-speed time-series
-for(i in range[-length(range)]){
-  i_dat = dat[dat$Frame==i,]    #select data frame-wise
-  i_dat1= dat[dat$Frame==i+1,] 
-  df<-merge(x=i_dat,y=i_dat1,by="Id",all=FALSE)
-  idd = df$Id
-  dis = sqrt((df$x.x-df$x.y)^2 + (df$y.x - df$y.y)^2 )
-  speeData <- rbind(speeData, data.frame(df$Frame.x,idd, dis))
-  
-}
+#Polarization time-series
+pol=na.omit(pol)
+mvalue=cpt.mean(pol, method="BinSeg",Q=4,penalty="None")
+plot(mvalue,ylab="Polarization",xlab="Frame number",ylim=c(-1,1),xaxt="n")
+mtext(text=range[loc],side=1,at=loc)
+abline(v=cp,col="red")
+
+#Median individual speed
+medSpI=na.omit(medSpI)
+mvalue=cpt.mean(medSpI, method="BinSeg",Q=4,penalty="None")
+plot(mvalue,ylab="medSpI",xlab="Frame number",xaxt="n")
+mtext(text=range[loc],side=1,at=loc)
+abline(v=cp,col="red")
 
 
-pairAsso=data.frame()  #create an empty list t store the output
+#Elongation
+elon=na.omit(elon)
+mvalue=cpt.mean(elon, method="BinSeg",Q=4,penalty="None")
+plot(mvalue,ylab="Elongation",xlab="Frame number",xaxt="n",type="b")
+mtext(text=range[loc],side=1,at=loc)
+abline(v=cp,col="red")
 
-ts=vector()
-id1=vector()
-id2=vector()
-dist=vector()
-t=1
-for(i in range[-length(range)]){
-  i_dat = dat[dat$Frame==i,]    #select data frame-wise
-  
-  #Average distance between individuals
-  #ndMat = matrix(ncol=nrow(i_dat), nrow=nrow(i_dat)) #matrix to store pair-wise distances
-    
-  for (k in 1:nrow(i_dat)){
-      for (j in 1:nrow(i_dat)){
-        dis = sqrt(sum(( (i_dat$x[k] - i_dat$x[j])^2 ),( (i_dat$x[k] - i_dat$x[j])^2 )))
-        if(j>k){   #Take only upper-diagonal elements
-          ts[t] = i
-          id1[t] =  i_dat$Id[k]
-          id2[t] = i_dat$Id[j]
-          dist[t] = dis
-          t=t+1
-        }
-        }}
-  }
+#Tilt
+Tilt=na.omit(Tilt)
+mvalue=cpt.mean(Tilt, method="BinSeg",Q=4,penalty="None")
+plot(mvalue,ylab="Tilt",xlab="Frame number",xaxt="n",type="b")
+mtext(text=range[loc],side=1,at=loc)
+abline(v=cp,col="red")
 
-pairAsso=cbind(ts,id1,id2,dist)
-head(pairAsso)
-#write.csv(file="pairAsso.csv",x=pairAsso)
+##################Group structure correlations####################################
 
-#select a pair
-p1=1053
-p2=1281
-#plot time-series for pair-wise distances
-attach(pairAsso)
-dvec=as.data.frame(pairAsso[(id2==p2)&(id1==p1),c('dist','ts')])
-head(dvec)
+x=ccf(pol,medSpI,na.action = na.pass,lag.max=50)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+x=ccf(mnnd,pol,na.action = na.pass)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+x=ccf(mnnd,medSpI,na.action = na.pass)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
-spee=as.data.frame(speeData[(speeData$idd==p1),c('dis','df.Frame.x')])
-colnames(spee)[2]='ts'
-spee1=as.data.frame(speeData[(speeData$idd==p2),c('dis','df.Frame.x')])
-colnames(spee1)[2]='ts'
-allData=merge(merge(dvec,spee,by="ts",all=FALSE),spee1,by="ts",all=FALSE)
+##pre perturbation
+pre=1:cp
+x=ccf(pol[pre],medSpI[pre],na.action = na.pass,lag.max=50)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+x=ccf(mnnd[pre],pol[pre],na.action = na.pass)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
-plot(allData$dist~allData$ts,xlab="Frame number",ylab="Pair-wise distance",main=paste("Male ID - ",p1,", Female ID - ",p2),pch=8)
-par(new=TRUE)
-plot(allData$dis.x~allData$ts,col="orange",pch=17,axes=FALSE, bty = "n", xlab = "", ylab = "")
-axis(side=4, at = pretty(range(allData$dis.x)))
-mtext("speed", side=4, line=3)
-points(allData$dis.y~allData$ts,col="blue",pch=10)
-legend("topright",legend=c("distance","male speed","female speed"),col=c("black","orange","blue"),pch=c(8,17,10))
+##post perturbation
+pre=cp:length(range)
+x=ccf(pol[pre],medSpI[pre],na.action = na.pass,lag.max=50)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+x=ccf(mnnd[pre],pol[pre],na.action = na.pass)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 
-#calculate cross correlation between distance between pairs and ind speed
-ccf(allData$dist,allData$dis.x,na.action = na.pass)
-ccf(allData$dist,allData$dis.y,na.action = na.pass)
-ccf(allData$dis.x,allData$dis.y,na.action = na.pass)
+##################################Individual to group correlations#################################################
+
+
