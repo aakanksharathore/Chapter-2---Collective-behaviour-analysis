@@ -45,13 +45,15 @@ fts=c(5,12,27,28,30,34)
 for(i in 1:length(fts)){
   dt_temp = vel[vel$ID==fts[i],]
   if(i==1){
-    plot(dt_temp$v~dt_temp$Frame,xlim=c(min(range),max(range)),ylim=c(min(vel$v),200),col=fts[i],type="b")
+    plot(dt_temp$v~dt_temp$Frame,xlim=c(min(range),max(range)),ylim=c(min(vel$v),200),col=fts[i],type="b",xaxt="n")
   }else{
     points(dt_temp$v~dt_temp$Frame,type="b",col=fts[i])
   }
 }
-
+loc=seq(min(range),max(range),by=1000)
+mtext(text=loc,side=1,at=loc)
 legend("topright",legend=fts,col=fts,pch=20)
+abline(v=range[cp],col="black")
 
 #Change point analysis
 library(changepoint)
@@ -67,7 +69,16 @@ cpts[i,"cp1"]=mvalue@cpts[1]
 cpts[i,"cp2"]=mvalue@cpts[2]
 cpts[i,"cpl"]=mvalue@cpts[length(mvalue@cpts)]
 }
-#Hiierarchy of change-points
+
+
+
+##Add some code to remove the individuals who disappear before the response event
+#and if they are present for less than 20% frames during the lead-lag event
+
+cpts=subset(cpts, cpl>cp) #when last point of change is before the approach
+
+
+#Hierarchy of change-points
 cpts$id[order(cpts$cp1)]
 Init=cpts$id[order(cpts$cp1)][1]
 
@@ -89,7 +100,7 @@ if(nrow(dt_1)==0 | nrow(dt_2) == 0){
  next
 }
 ##Ind speed vs Median speed of individuals
-x=ccf(dt_1$v,dt_2$v,na.action = na.pass,lag.max=50)
+x=ccf(dt_1$v,dt_2$v,na.action = na.pass,lag.max=10)   ##set max lag to correlation length later
 l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
 if(l<0){
 #lead[i,j]=1 
@@ -121,3 +132,11 @@ V(net)       # The vertices of the "net" object
 E(net)$type  # Edge attribute "type"
 V(net)$media # Vertex attribute "media"
 plot(net,edge.label=d$lagv)
+
+##Network analysis
+
+#Degree centrality
+centr_degree(net, mode = "in")
+
+#closeness centrality
+closeness(net,mode="in")
