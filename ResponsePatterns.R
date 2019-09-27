@@ -22,3 +22,28 @@ ggplot(dat, aes(SizeInt, ..count..)) + geom_bar(aes(fill = speed), position = "d
 ggplot(dat, aes(habitat, ..count..)) + geom_bar(aes(fill = strucrure), position = "dodge")
 ggplot(dat, aes(beh.activity, ..count..)) + geom_bar(aes(fill = speed), position = "dodge")
 ggplot(dat, aes(SizeInt, ..count..)) + geom_bar(aes(fill = speed), position = "dodge")
+
+
+#--------------------------------------------------------------------------------------#
+##group size distribution
+#--------------------------------------------------------------------------------------#
+#Histogram
+ggplot(dat, aes(x=Group.size)) + 
+  geom_histogram(colour="black", fill="white")
+
+# Histogram with density plot
+ggplot(dat, aes(x=Group.size)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white")+
+  geom_density(alpha=.2, fill="#FF6666")
+
+ggplot(dat, aes(x=Group.size, color=openness,fill=openness)) +
+  geom_histogram(position="dodge", alpha=0.2) + theme(legend.position="bottom")
+
+
+#--------------------------------------------------------------------------------------#
+##response shape and group size
+#--------------------------------------------------------------------------------------#
+
+#response shape and group size
+
+ggplot(dat, aes(Group.size, ..count..)) + geom_bar(aes(fill = shape), position = "dodge")

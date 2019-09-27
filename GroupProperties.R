@@ -22,6 +22,11 @@ Tilt=vector()
 ##User-input (input the frame number for visual response)
 cp=4500
 
+##Clean the data
+cut_l=length(unique(dat$Frame))*0.2
+dd=as.data.frame(table(dat$ID))
+trails=dd$Var1[dd$Freq>round(cut_l)]
+dat=subset(dat,ID %in% trails)
 ############Ananalyze a subset###################
 range = unique(dat$Frame)
 #dat=dat[dat$Frame>=range[1] & dat$Frame <= range[length(range)],]
@@ -33,7 +38,9 @@ dat$y=(dat$ymin+dat$ymax)/2
 ###Group stucture ########################################################
 for(i in 1:length(range)){
 i_dat = dat[dat$Frame==range[i],]
- 
+if(nrow(i_dat)<3){
+  next
+} 
 
 ##Calculations for group level properties
   ##ANND
@@ -75,7 +82,7 @@ i_dat = dat[dat$Frame==range[i],]
     vmod=sqrt(((sum(new_dat$vx))^2)+((sum(new_dat$vy))^2))
     pol[i]=vmod/nrow(new_dat)
     }else{
-      pol[i] = -10
+      next
     }
 
   }
@@ -87,68 +94,77 @@ i_dat = dat[dat$Frame==range[i],]
 
 ###################Group properties#############################################
 loc=seq(1,range[length(range)],by=1000)
-
+mm=floor((loc/30)/60)
+ss=round((loc/30)-mm*60)
 # median NND time-series
 mnnd=na.omit(mnnd)
 mvalue=cpt.mean(mnnd, method="BinSeg",Q=4,penalty="None")
-plot(mvalue,ylab="median NND",xlab="Frame number",xaxt="n")
-mtext(text=range[loc],side=1,at=loc)
-abline(v=cp,col="red")
+plot(mvalue,ylab="median NND",xlab="Time",xaxt="n")
+mtext(text=paste(mm,":",ss),side=1,at=loc)
+#abline(v=cp,col="red")
 
 #Polarization time-series
 pol=na.omit(pol)
 mvalue=cpt.mean(pol, method="BinSeg",Q=4,penalty="None")
-plot(mvalue,ylab="Polarization",xlab="Frame number",ylim=c(-1,1),xaxt="n")
-mtext(text=range[loc],side=1,at=loc)
+plot(mvalue,ylab="Polarization",xlab="Time",ylim=c(-1,1),xaxt="n")
+mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=cp,col="red")
 
 #Median individual speed
 medSpI=na.omit(medSpI)
 mvalue=cpt.mean(medSpI, method="BinSeg",Q=4,penalty="None")
-plot(mvalue,ylab="medSpI",xlab="Frame number",xaxt="n")
-mtext(text=range[loc],side=1,at=loc)
+plot(mvalue,ylab="medSpI",xlab="Time",xaxt="n")
+mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=cp,col="red")
 
 
 #Elongation
 elon=na.omit(elon)
 mvalue=cpt.mean(elon, method="BinSeg",Q=4,penalty="None")
-plot(mvalue,ylab="Elongation",xlab="Frame number",xaxt="n",type="b")
-mtext(text=range[loc],side=1,at=loc)
+plot(mvalue,ylab="Elongation",xlab="Time",xaxt="n",type="b")
+mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=cp,col="red")
 
 #Tilt
 Tilt=na.omit(Tilt)
 mvalue=cpt.mean(Tilt, method="BinSeg",Q=4,penalty="None")
-plot(mvalue,ylab="Tilt",xlab="Frame number",xaxt="n",type="b")
-mtext(text=range[loc],side=1,at=loc)
+plot(mvalue,ylab="Tilt",xlab="Time",xaxt="n",type="b")
+mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=cp,col="red")
 
 ##################Group structure correlations####################################
 
-x=ccf(pol,medSpI,na.action = na.pass,lag.max=50)
+x=ccf(pol,medSpI,na.action = na.pass,lag.max=60)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
-x=ccf(mnnd,pol,na.action = na.pass)
+
+x=ccf(mnnd,pol,na.action = na.pass,lag.max=60)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
-x=ccf(mnnd,medSpI,na.action = na.pass)
+
+x=ccf(mnnd,medSpI,na.action = na.pass,lag.max=60)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 ##pre perturbation
 pre=1:cp
+
 x=ccf(pol[pre],medSpI[pre],na.action = na.pass,lag.max=50)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+
 x=ccf(mnnd[pre],pol[pre],na.action = na.pass)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+
 x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
-##post perturbation
-pre=cp:length(range)
-x=ccf(pol[pre],medSpI[pre],na.action = na.pass,lag.max=50)
+##post perturbation 1
+pos=2387:3043
+
+x=ccf(pol[pos],medSpI[pos],na.action = na.pass,lag.max=50)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
-x=ccf(mnnd[pre],pol[pre],na.action = na.pass)
+
+x=ccf(mnnd[pos],pol[pos],na.action = na.pass)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
-x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass)
+
+x=ccf(mnnd[pos],medSpI[pos],na.action = na.pass)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 
