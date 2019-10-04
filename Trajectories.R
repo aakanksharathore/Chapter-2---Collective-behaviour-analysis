@@ -2,7 +2,7 @@ fname <- file.choose()
 dat = read.csv(fname, header=TRUE)
 
 ##Clean the data (remove trajectories which are present less han 10% of time)
-cut_l=length(unique(dat$Frame))*0.1
+cut_l=length(unique(dat$Frame))*0.2
 dd=as.data.frame(table(dat$ID))
 trails=dd$Var1[dd$Freq>round(cut_l)]
 dat=subset(dat,ID %in% trails)
