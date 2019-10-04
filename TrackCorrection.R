@@ -34,7 +34,7 @@ for(i in 1:length(fts)){
       datO$ymin[k]=dt_temp$ymin[dt_temp$Frame==frames[j]]
       datO$xmax[k]=dt_temp$xmax[dt_temp$Frame==frames[j]]
       datO$ymax[k]=dt_temp$ymax[dt_temp$Frame==frames[j]]
-    }else{
+    }else if(j>1){
 
     datO$xmin[k]=datO$xmin[k-1]
     datO$ymin[k]=datO$ymin[k-1]
