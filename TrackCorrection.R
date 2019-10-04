@@ -23,7 +23,7 @@ k=1
 j=1
 for(i in 1:length(fts)){
  
-  dat_t=dat[dat$ID==fts[i],]
+  dt_temp=dat[dat$ID==fts[i],]
   if(nrow(dat_t)>0){
   for(j in 1:length(frames)){
     datO$ID[k]=fts[i]
