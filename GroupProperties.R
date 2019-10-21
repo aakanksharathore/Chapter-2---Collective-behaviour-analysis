@@ -7,6 +7,7 @@ library(spatstat)
 library(changepoint)
 fname <- file.choose()
 dat = read.csv(fname, header=TRUE)
+dat=na.omit(dat)
 #View(dat)
 dat_out=data.frame()
 annd=vector()
@@ -19,8 +20,8 @@ mnnd=vector()  #median nearest neighbour distance (might be a better metric than
 medSpI=vector()
 elon=vector()
 Tilt=vector()
-##User-input (input the frame number for visual response)
-cp=4500
+##User-input (input the frame number for approach frame)
+cp=10810
 
 ##Clean the data
 cut_l=length(unique(dat$Frame))*0.2
@@ -37,14 +38,13 @@ dat$y=(dat$ymin+dat$ymax)/2
 ##################################################################################
 ###Group stucture ########################################################
 for(i in 1:length(range)){
-i_dat = dat[dat$Frame==range[i],]
+i_dat = na.omit(dat[dat$Frame==range[i],])
 if(nrow(i_dat)<3){
   next
 } 
 
 ##Calculations for group level properties
-  ##ANND
-  annd[i]=mean(nndist(i_dat$x,i_dat$y))
+
   #median NND
   mnnd[i]=median(nndist(i_dat$x,i_dat$y))
 
@@ -60,7 +60,7 @@ if(nrow(i_dat)<3){
  ##Average group velocity
   if(i<(length(range))){
     
-    i_dat1=dat[dat$Frame==range[i+1],]
+    i_dat1=na.omit(dat[dat$Frame==range[i+1],])
     Avel[i]=sqrt( ((mean(i_dat1$x)-mean(i_dat$x))^2) + ((mean(i_dat1$y)-mean(i_dat$y))^2) )
     #Tilt
     AvelS = (mean(i_dat1$y)-mean(i_dat$y))/(mean(i_dat1$x)-mean(i_dat$x)) #Slope of group velocity
@@ -99,38 +99,45 @@ ss=round((loc/30)-mm*60)
 # median NND time-series
 mnnd=na.omit(mnnd)
 mvalue=cpt.mean(mnnd, method="BinSeg",Q=4,penalty="None")
-plot(mvalue,ylab="median NND",xlab="Time",xaxt="n")
+plot(mvalue,ylab="median NND",xlab="Time")#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
-#abline(v=cp,col="red")
+abline(v=which(range==cp),col="red")
 
 #Polarization time-series
 pol=na.omit(pol)
 mvalue=cpt.mean(pol, method="BinSeg",Q=4,penalty="None")
-plot(mvalue,ylab="Polarization",xlab="Time",ylim=c(-1,1),xaxt="n")
+plot(mvalue,ylab="Polarization",xlab="Time",ylim=c(0,1))#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
-abline(v=cp,col="red")
+abline(v=which(range==cp),col="red")
 
 #Median individual speed
 medSpI=na.omit(medSpI)
 mvalue=cpt.mean(medSpI, method="BinSeg",Q=4,penalty="None")
-plot(mvalue,ylab="medSpI",xlab="Time",xaxt="n")
+plot(mvalue,ylab="medSpI",xlab="Time")#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
-abline(v=cp,col="red")
+abline(v=which(range==cp),col="red")
 
 
 #Elongation
 elon=na.omit(elon)
 mvalue=cpt.mean(elon, method="BinSeg",Q=4,penalty="None")
-plot(mvalue,ylab="Elongation",xlab="Time",xaxt="n",type="b")
+plot(mvalue,ylab="Elongation",xlab="Time")#,xaxt="n",type="b")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
-abline(v=cp,col="red")
+abline(v=which(range==cp),col="red")
 
 #Tilt
 Tilt=na.omit(Tilt)
 mvalue=cpt.mean(Tilt, method="BinSeg",Q=4,penalty="None")
-plot(mvalue,ylab="Tilt",xlab="Time",xaxt="n",type="b")
+plot(mvalue,ylab="Tilt",xlab="Time")#,xaxt="n",type="b")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
-abline(v=cp,col="red")
+abline(v=which(range==cp),col="red")
+
+##################Autocorrelation lengths#####################################
+
+acf(mnnd,lag=3000)
+x=acf(medSpI,lag=1800)
+x=acf(pol,lag=1800)
+which(round(x$acf,digits=1)==0.0)
 
 ##################Group structure correlations####################################
 
@@ -144,7 +151,7 @@ x=ccf(mnnd,medSpI,na.action = na.pass,lag.max=60)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 ##pre perturbation
-pre=1:cp
+pre=1:1500
 
 x=ccf(pol[pre],medSpI[pre],na.action = na.pass,lag.max=50)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
@@ -156,7 +163,7 @@ x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 ##post perturbation 1
-pos=2387:3043
+pos=3500:5000
 
 x=ccf(pol[pos],medSpI[pos],na.action = na.pass,lag.max=50)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
