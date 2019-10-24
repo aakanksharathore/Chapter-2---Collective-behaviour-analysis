@@ -162,6 +162,19 @@ mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
+##During perturbation
+dur=1500:3500
+
+x=ccf(pol[dur],medSpI[dur],na.action = na.pass,lag.max=50)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+
+x=ccf(mnnd[dur],pol[dur],na.action = na.pass)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+
+x=ccf(mnnd[dur],medSpI[dur],na.action = na.pass)
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+
+
 ##post perturbation 1
 pos=3500:5000
 
