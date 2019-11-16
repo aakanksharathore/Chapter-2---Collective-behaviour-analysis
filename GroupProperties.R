@@ -21,7 +21,7 @@ medSpI=vector()
 elon=vector()
 Tilt=vector()
 ##User-input (input the frame number for approach frame)
-cp=10810
+cp=14400
 
 ##Clean the data
 cut_l=length(unique(dat$Frame))*0.2
@@ -89,30 +89,44 @@ if(nrow(i_dat)<3){
   
 }
 
+##################Autocorrelation lengths#####################################
+mnnd=na.omit(mnnd)
+pol=na.omit(pol)
+medSpI=na.omit(medSpI)
+acf(mnnd,lag=3000,na.action=na.pass)
+x=acf(medSpI,lag=1800,na.action=na.pass)
+x=acf(pol,lag=1800,na.action=na.pass)
+which(round(x$acf,digits=1)==0.0)
 
-##Plots
-
+ ##Plots
+library(TTR)
 ###################Group properties#############################################
 loc=seq(1,range[length(range)],by=1000)
 mm=floor((loc/30)/60)
 ss=round((loc/30)-mm*60)
+
 # median NND time-series
-mnnd=na.omit(mnnd)
-mvalue=cpt.mean(mnnd, method="BinSeg",Q=4,penalty="None")
+
+mnnd1=SMA(mnnd,n=500)
+mnnd1=na.omit(mnnd1)
+mvalue=cpt.mean(mnnd1, method="BinSeg",Q=10,penalty="None")
 plot(mvalue,ylab="median NND",xlab="Time")#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
 
+
 #Polarization time-series
-pol=na.omit(pol)
-mvalue=cpt.mean(pol, method="BinSeg",Q=4,penalty="None")
+pol1=SMA(pol,n=500)
+pol1=na.omit(pol1)
+mvalue=cpt.mean(pol1, method="BinSeg",Q=4,penalty="None")
 plot(mvalue,ylab="Polarization",xlab="Time",ylim=c(0,1))#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
 
 #Median individual speed
-medSpI=na.omit(medSpI)
-mvalue=cpt.mean(medSpI, method="BinSeg",Q=4,penalty="None")
+medSpI1=SMA(medSpI,n=500)
+medSpI1=na.omit(medSpI1)
+mvalue=cpt.mean(medSpI1, method="BinSeg",Q=4,penalty="None")
 plot(mvalue,ylab="medSpI",xlab="Time")#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
@@ -132,12 +146,7 @@ plot(mvalue,ylab="Tilt",xlab="Time")#,xaxt="n",type="b")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
 
-##################Autocorrelation lengths#####################################
 
-acf(mnnd,lag=3000)
-x=acf(medSpI,lag=1800)
-x=acf(pol,lag=1800)
-which(round(x$acf,digits=1)==0.0)
 
 ##################Group structure correlations####################################
 
@@ -151,19 +160,19 @@ x=ccf(mnnd,medSpI,na.action = na.pass,lag.max=60)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 ##pre perturbation
-pre=1:1500
+pre=1:1000
 
-x=ccf(pol[pre],medSpI[pre],na.action = na.pass,lag.max=50)
+x=ccf(pol[pre],medSpI[pre],na.action = na.pass)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 x=ccf(mnnd[pre],pol[pre],na.action = na.pass)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
-x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass)
+x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 ##During perturbation
-dur=1500:3500
+dur=2500:3000
 
 x=ccf(pol[dur],medSpI[dur],na.action = na.pass,lag.max=50)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
@@ -176,7 +185,7 @@ mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 
 ##post perturbation 1
-pos=3500:5000
+pos=7000:8000
 
 x=ccf(pol[pos],medSpI[pos],na.action = na.pass,lag.max=50)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
