@@ -5,12 +5,12 @@ fname <- file.choose()
 dat = read.csv(fname, header=TRUE)
 #View(dat)
 dat_out=data.frame()
-cp=14400  ##Approach frame
+cp=1  ##Approach frame
 
-range=unique(dat$Frame)
+o_range=unique(dat$Frame)
 ##Clean the data (remove trajectories which are present less han 10% of time)
 #dat=subset(dat, Frame > range[1200])
-cut_l=30 #length(unique(dat$Frame))*0.2
+cut_l=300 #length(unique(dat$Frame))*0.2
 dd=as.data.frame(table(dat$ID))
 trails=dd$Var1[dd$Freq>round(cut_l)]
 dat=subset(dat,ID %in% trails)
@@ -78,11 +78,11 @@ for(i in 1:length(fts)){
   
 dt_temp = vel[vel$ID==fts[i],] 
 dt_temp = na.omit(dt_temp)
-if((nrow(dt_temp)<150) | (max(dt_temp$vs)<40)){
+if((nrow(dt_temp)<150) | (max(dt_temp$vs)<mean(na.omit(vel$vs)))){
   next
 }
 ##For speed
-mvalue=cpt.mean(dt_temp$vs, method="BinSeg",Q=15,penalty="None")
+mvalue=cpt.mean(dt_temp$vs, method="BinSeg",Q=3,penalty="None")
 plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n")
 cpts[i,"id"]=fts[i]
 cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$vs[mvalue@cpts+30]-dt_temp$vs[(mvalue@cpts)])>0)[1]]]
@@ -103,7 +103,7 @@ cpts[i,"cpl"]=dt_temp$Frame[mvalue@cpts[length(mvalue@cpts)-1]]
 
 
 #Hierarchy of change-points
-write.csv(file="Graphs/10MarchEve1_03_04/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
+write.csv(file="Graphs/09MarchMor1_04_05/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
 Init=cpts$id[order(cpts$cp1)][1]
 
 cpts$id[order(cpts$cp1)]
@@ -183,18 +183,19 @@ while(curr_frame<N){
         ##cross correlation for 2 individuals
         x=ccf(dt_1$v,dt_2$v,na.action = na.pass,lag.max=30,plot=FALSE)   ##set max lag to correlation length later
         l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
-        corrs[ct]=max(abs(x$acf))
         if(l<0){
           #lead[i,j]=1 
           lead[ct]=as.character(fts[i])
           lag[ct]=as.character(fts[j])
           lagv[ct]=abs(l)
+          corrs[ct]=max(abs(x$acf))
           ct=ct+1
         }else if(l>0){
           #lead[i,j]=0
           lead[ct]=as.character(fts[j])
           lag[ct]=as.character(fts[i])
           lagv[ct]=l
+          corrs[ct]=max(abs(x$acf))
           ct=ct+1
           #}else{
           # lead[i,j]=-1
@@ -205,11 +206,12 @@ while(curr_frame<N){
   }
   
   ##Draw the network
-  assign(paste("d",cn,sep="_"),as.data.frame(cbind(lead,lag,as.numeric(lagv),as.numeric(corrs))))
+  assign(paste("d",cn,sep="_"),data.frame(lead,lag,lagv,corrs))
   
   
 }
 
+library('igraph')
 ##Save the graphs and closeness centrality rank time-series
 Inflnet<- data.frame(matrix(ncol = 3, nrow = 0))
 x <- c("window","ID","ccIndex")
@@ -218,7 +220,6 @@ for(i in 1:cn){
   
   ##Put threshold on the correlation strength, high threshold for now = 0.5
   d=subset(get(paste("d",i,sep="_")),corrs>0.5)
-  library('igraph')
   net <- graph_from_data_frame(d=d, vertices=fts, directed=T) 
   ##Color the vertices for their closeness centrality
   fine = 1000 # this will adjust the resolving power.
@@ -226,7 +227,7 @@ for(i in 1:cn){
   
   #this gives you the colors you want for every point
   graphCol = pal(fine)[as.numeric(cut(closeness(net,mode="out"),breaks = fine))]  
-  setwd("/media/aakanksha/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/Chapter2/Graphs/10MarchEve1_03_04/Individual_networks/")
+  setwd("/media/aakanksha/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/3_CollectiveEscape/Graphs/19MarchMor_04_05/individual_networks/")
   png(filename=paste("d",i,".png",sep="_"))
   plot(net,edge.arrow.size=.1,layout=layout_with_fr,edge.label=d$lagv,vertex.color=graphCol)
   legend(x=1, y=.75, legend=c("Leader", "Influencers","Followers","Isolated"),pch=21, pt.bg=c("green","blue","red","white"), pt.cex=2, bty="n")
@@ -272,9 +273,9 @@ sort(sdInfl)
 ############################3For particlar events###########################
 ################################################################################
 #pairwise cross
-#pairwise cross-correlations for coordinated bouts
-st=range[1000]#27500#25350
-sp=range[1600]#28000#26000
+#pairwise cross-correlations for coordinated bouts,  set these in the beginning
+st=range[1500]#27500#25350
+sp=range[3000]#28000#26000
 vel1=vel[which((vel$Frame>=st) & (vel$Frame<=sp)),]
 #lead<- data.frame(nrows=length(fts)^2,ncol=2)
 lead=vector()
@@ -317,23 +318,23 @@ for(i in 1:length(fts)){
 
 
 ##Draw the network
-d=as.data.frame(cbind(lead,lag,lagv=as.numeric(lagv),corrs=as.numeric(corrs)))
+d=data.frame(lead,lag,lagv,corrs)
 
 ##Put threshold on the correlation strength, high threshold for now = 0.5
-d=subset(d,as.numeric(corrs)>0.5)
+d=subset(d,corrs>0.5)
 library('igraph')
 net <- graph_from_data_frame(d=d, vertices=fts, directed=T) 
 E(net)       # The edges of the "net" object
 V(net)       # The vertices of the "net" object
 #V(net)$size <- log(closeness(net,mode="out")*100)*30
 # node we'll create a new color variable as a node property
-#V(net)$color[closeness(net,mode="out") %in% sort(closeness(net,mode="out"),decreasing=TRUE)[1:5]] <- "green"
-#V(net)$color[closeness(net,mode="out") %in% sort(closeness(net,mode="out"),decreasing=FALSE)[1:5]] <- "red"
+V(net)$color[closeness(net,mode="out") %in% sort(closeness(net,mode="out"),decreasing=TRUE)[1:5]] <- "green"
+V(net)$color[closeness(net,mode="out") %in% sort(closeness(net,mode="out"),decreasing=FALSE)[1:5]] <- "red"
 
 E(net)$type  # Edge attribute "type"
 #V(net)$label <- ifelse( closeness(net,mode="out")==max(closeness(net,mode="out")), V(net)$name, NA )
-graphCol = pal(fine)[as.numeric(cut(closeness(net,mode="out"),breaks = fine))]  
-plot(net,edge.arrow.size=.1,layout=layout_as_star,edge.label=d$lagv,vertex.color=graphCol)
+#graphCol = pal(fine)[as.numeric(cut(closeness(net,mode="out"),breaks = fine))]  
+plot(net,edge.arrow.size=.1,layout=layout_with_fr,edge.label=d$lagv)
 legend(x=1, y=.75, legend=c("Leader", "Influencers","Followers","Isolated"),pch=21, pt.bg=c("green","blue","red","white"), pt.cex=2, bty="n")
 
 ##Network analysis
@@ -343,7 +344,7 @@ centr_degree(net, mode = "out")
 
 #closeness centrality
 sort(closeness(net,mode="out"),decreasing=TRUE)
-write.csv(file="/media/aakanksha/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/Chapter2/Graphs/10MarchEve1_03_04/individual_networks/Influence_RanAll.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
+write.csv(file="/media/aakanksha/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/3_CollectiveEscape/Graphs/19MarchMor_04_05/Influence_event.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
 
 
 ##Display on image

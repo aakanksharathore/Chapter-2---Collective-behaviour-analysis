@@ -1,6 +1,6 @@
 fname <- file.choose()
 dat = read.csv(fname, header=TRUE)
-
+dat=na.omit(dat)
 ##Clean the data (remove trajectories which are present less han 10% of time)
 cut_l=length(unique(dat$Frame))*0.2
 dd=as.data.frame(table(dat$ID))
@@ -8,7 +8,7 @@ trails=dd$Var1[dd$Freq>round(cut_l)]
 dat=subset(dat,ID %in% trails)
 
 #Plot time-series for the individual velocities
-fts = unique(dat$ID)
+fts = 5#unique(dat$ID)
 
 
 
