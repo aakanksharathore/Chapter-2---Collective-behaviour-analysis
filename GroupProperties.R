@@ -6,10 +6,12 @@ library(adehabitatHR)
 library(spatstat) 
 library(zoo)
 library(changepoint)
+library(TTR)
+
 fname <- file.choose()
 dat = read.csv(fname, header=TRUE)
 dat=na.omit(dat)
-#View(dat)
+head(dat)
 dat_out=data.frame()
 annd=vector()
 Avel=vector()
@@ -29,6 +31,14 @@ cut_l=300 #(remove IDs which are there for less than 10 seconds)
 dd=as.data.frame(table(dat$ID))
 trails=dd$Var1[dd$Freq>round(cut_l)]
 dat=subset(dat,ID %in% trails)
+
+#Remove duplicate IDs
+
+dat1=dat[!duplicated(cbind(dat$Frame,dat$ID)),]
+dat=NA
+dat=dat1
+
+
 ############Ananalyze a subset###################
 range = unique(dat$Frame)
 #dat=dat[dat$Frame>=range[1] & dat$Frame <= range[length(range)],]
@@ -39,7 +49,7 @@ dat$y=(dat$ymin+dat$ymax)/2
 ##################################################################################
 ###Group stucture ########################################################
 #remove frames which have less than 3 individuals
-for(i in 1:length(range)){
+for(i in 1:(length(range)-1)){
 i_dat = na.omit(dat[dat$Frame==range[i],])
 if(nrow(i_dat)<3){
   next
@@ -60,7 +70,6 @@ if(nrow(i_dat)<3){
   pcSlope=pc$rotation["y","PC1"]/pc$rotation["x","PC1"]
   
  ##Average group velocity
-  if(i<(length(range))){
     
     i_dat1=na.omit(dat[dat$Frame==range[i+1],])
     Avel[i]=sqrt( ((mean(i_dat1$x)-mean(i_dat$x))^2) + ((mean(i_dat1$y)-mean(i_dat$y))^2) )
@@ -89,7 +98,6 @@ if(nrow(i_dat)<3){
 
   }
   
-}
 
 ##################Autocorrelation lengths#####################################
 mnnd=na.omit(mnnd)
@@ -101,7 +109,6 @@ x=acf(pol,lag=1800,na.action=na.pass)
 which(round(x$acf,digits=1)==0.0)[1]
 
  ##Plots
-library(TTR)
 ###################Group properties#############################################
 loc=seq(1,range[length(range)],by=1000)
 mm=floor((loc/30)/60)
@@ -111,7 +118,7 @@ ss=round((loc/30)-mm*60)
 
 mnnd1=SMA(mnnd,n=300)
 mnnd1=na.omit(mnnd1)
-mvalue=cpt.mean(mnnd1, method="BinSeg",Q=4,penalty="None")
+mvalue=cpt.mean(mnnd1, method="BinSeg",Q=3,penalty="None")
 plot(mvalue,ylab="median NND",xlab="Time")#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
@@ -120,7 +127,7 @@ abline(v=which(range==cp),col="red")
 #Polarization time-series
 pol1=SMA(pol,n=300)
 pol1=na.omit(pol1)
-mvalue=cpt.mean(pol1, method="BinSeg",Q=2,penalty="None")
+mvalue=cpt.mean(pol1, method="BinSeg",Q=3,penalty="None")
 plot(mvalue,ylab="Polarization",xlab="Time",ylim=c(0,1))#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
@@ -153,7 +160,7 @@ abline(v=which(range==cp),col="red")
 ##################Group structure correlations####################################
 
 ##pre perturbation
-pre=1:1500
+pre=1:900
 
 x=ccf(pol[pre],medSpI[pre],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
@@ -165,7 +172,7 @@ x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 ##During perturbation
-dur=1500:3000
+dur=900:3000
 
 x=ccf(pol[dur],medSpI[dur],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
@@ -178,7 +185,7 @@ mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 
 ##post perturbation 1
-pos=7500:9000
+pos=6500:9000
 
 x=ccf(pol[pos],medSpI[pos],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
