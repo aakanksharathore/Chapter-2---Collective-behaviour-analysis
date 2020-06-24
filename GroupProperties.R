@@ -135,7 +135,7 @@ abline(v=which(range==cp),col="red")
 #Median individual speed
 medSpI1=SMA(medSpI,n=300)
 medSpI1=na.omit(medSpI1)
-mvalue=cpt.mean(medSpI1, method="BinSeg",Q=2,penalty="None")
+mvalue=cpt.mean(medSpI1, method="BinSeg",Q=3,penalty="None")
 plot(mvalue,ylab="medSpI",xlab="Time")#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
@@ -160,7 +160,7 @@ abline(v=which(range==cp),col="red")
 ##################Group structure correlations####################################
 
 ##pre perturbation
-pre=1:900
+pre=1:2500
 
 x=ccf(pol[pre],medSpI[pre],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
@@ -172,7 +172,7 @@ x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 ##During perturbation
-dur=900:3000
+dur=3500:5000
 
 x=ccf(pol[dur],medSpI[dur],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
@@ -185,7 +185,7 @@ mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 
 ##post perturbation 1
-pos=6500:9000
+pos=6500:8000
 
 x=ccf(pol[pos],medSpI[pos],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
