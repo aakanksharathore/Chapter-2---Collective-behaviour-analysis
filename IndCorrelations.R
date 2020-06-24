@@ -84,7 +84,10 @@ for(i in 1:length(fts)){
   
 dt_temp = vel[vel$ID==fts[i],] 
 dt_temp = na.omit(dt_temp)
-if((nrow(dt_temp)<150) | (max(dt_temp$vs)<mean(na.omit(vel$vs)))){
+#if((nrow(dt_temp)<150) | (max(dt_temp$vs)<mean(na.omit(vel$vs)))){
+#  next
+#}     #commented on 24/06/2020, want to include all the individuals, however small there response may be
+if((nrow(dt_temp)<900)){     ##at least 30sec of response
   next
 }
 ##For speed
@@ -109,7 +112,7 @@ cpts[i,"cpl"]=dt_temp$Frame[mvalue@cpts[length(mvalue@cpts)-1]]
 
 
 #Hierarchy of change-points
-write.csv(file="Graphs/17MarchEve_04_05/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
+write.csv(file="Graphs/19MarchMor_08_09/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
 Init=cpts$id[order(cpts$cp1)][1]
 
 cpts$id[order(cpts$cp1)]
@@ -233,7 +236,7 @@ for(i in 1:cn){
   
   #this gives you the colors you want for every point
   graphCol = pal(fine)[as.numeric(cut(closeness(net,mode="out"),breaks = fine))]  
-  setwd("/media/akanksharathore/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/3_CollectiveEscape/Graphs/17MarchEve_04_05/individual_networks/")
+  setwd("/media/akanksharathore/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/3_CollectiveEscape/Graphs/19MarchMor_08_09/individual_networks/")
   png(filename=paste("d",i,".png",sep="_"))
   plot(net,edge.arrow.size=.1,layout=layout_with_fr,edge.label=d$lagv,vertex.color=graphCol)
   legend(x=1, y=.75, legend=c("Leader", "Influencers","Followers","Isolated"),pch=21, pt.bg=c("green","blue","red","white"), pt.cex=2, bty="n")
@@ -280,8 +283,8 @@ sort(sdInfl)
 ################################################################################
 #pairwise cross
 #pairwise cross-correlations for coordinated bouts,  set these in the beginning
-st=range[2000]#27500#25350
-sp=range[3500]#28000#26000
+st=range[3500]#27500#25350
+sp=range[5000]#28000#26000
 vel1=vel[which((vel$Frame>=st) & (vel$Frame<=sp)),]
 #lead<- data.frame(nrows=length(fts)^2,ncol=2)
 lead=vector()
