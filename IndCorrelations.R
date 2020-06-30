@@ -34,12 +34,10 @@ x <- c("Frame","ID","v","head")
 colnames(vel) <- x
 medSpI=vector()
 
-for(i in 1:length(range)){
+for(i in 1:(length(range)-10)){
   
-  i_dat = dat[dat$Frame==range[i],]
-  
-  if(i>1){
-    i_dat1=dat[dat$Frame==range[i-1],]
+    i_dat = dat[dat$Frame==range[i],]  
+    i_dat1=dat[dat$Frame==range[i+10],]   #changes to smoothen detection error, velocity vector over 10 frames, 29/06/2020
     new_dat=merge(x=i_dat1,y=i_dat,by="ID")
     new_dat$vx=new_dat$x.y-new_dat$x.x
     new_dat$vy=new_dat$y.y-new_dat$y.x
@@ -49,9 +47,7 @@ for(i in 1:length(range)){
     heading= atan2(new_dat$vy,new_dat$vx)*180/pi
     vel=rbind(vel,cbind(Frame=fr,ID=id,v=v,head=heading))
     medSpI[i]=median(v)
-  }
-  
-  
+
 }
 head(vel)
 fts = unique(vel$ID)
@@ -112,7 +108,7 @@ cpts[i,"cpl"]=dt_temp$Frame[mvalue@cpts[length(mvalue@cpts)-1]]
 
 
 #Hierarchy of change-points
-write.csv(file="Graphs/19MarchMor_08_09/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
+write.csv(file="Graphs/25MarchMor_01_02/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
 Init=cpts$id[order(cpts$cp1)][1]
 
 cpts$id[order(cpts$cp1)]
@@ -236,7 +232,7 @@ for(i in 1:cn){
   
   #this gives you the colors you want for every point
   graphCol = pal(fine)[as.numeric(cut(closeness(net,mode="out"),breaks = fine))]  
-  setwd("/media/akanksharathore/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/3_CollectiveEscape/Graphs/19MarchMor_08_09/individual_networks/")
+  setwd("/media/akanksharathore/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/3_CollectiveEscape/Graphs/25MarchMor_01_02/individual_networks/")
   png(filename=paste("d",i,".png",sep="_"))
   plot(net,edge.arrow.size=.1,layout=layout_with_fr,edge.label=d$lagv,vertex.color=graphCol)
   legend(x=1, y=.75, legend=c("Leader", "Influencers","Followers","Isolated"),pch=21, pt.bg=c("green","blue","red","white"), pt.cex=2, bty="n")
@@ -283,8 +279,8 @@ sort(sdInfl)
 ################################################################################
 #pairwise cross
 #pairwise cross-correlations for coordinated bouts,  set these in the beginning
-st=range[3500]#27500#25350
-sp=range[5000]#28000#26000
+st=range[3900]#27500#25350
+sp=range[5250]#28000#26000
 vel1=vel[which((vel$Frame>=st) & (vel$Frame<=sp)),]
 #lead<- data.frame(nrows=length(fts)^2,ncol=2)
 lead=vector()
@@ -353,7 +349,7 @@ centr_degree(net, mode = "out")
 
 #closeness centrality
 sort(closeness(net,mode="out"),decreasing=TRUE)
-write.csv(file="Graphs/17MarchEve_04_05/Influence_event.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
+write.csv(file="Graphs/25MarchMor_01_02/Influence_event2.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
 
 
 ##Display on image

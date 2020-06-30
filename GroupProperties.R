@@ -71,7 +71,7 @@ if(nrow(i_dat)<3){
   
  ##Average group velocity
     
-    i_dat1=na.omit(dat[dat$Frame==range[i+1],])
+    i_dat1=na.omit(dat[dat$Frame==range[i+10],])  #changed to i+10 to smoothen the error in detection, 29/06/2020
     Avel[i]=sqrt( ((mean(i_dat1$x)-mean(i_dat$x))^2) + ((mean(i_dat1$y)-mean(i_dat$y))^2) )
     #Tilt
     AvelS = (mean(i_dat1$y)-mean(i_dat$y))/(mean(i_dat1$x)-mean(i_dat$x)) #Slope of group velocity
@@ -160,7 +160,7 @@ abline(v=which(range==cp),col="red")
 ##################Group structure correlations####################################
 
 ##pre perturbation
-pre=1:2500
+pre=1:1000
 
 x=ccf(pol[pre],medSpI[pre],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
@@ -172,7 +172,7 @@ x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 ##During perturbation
-dur=3500:5000
+dur=3900:5250
 
 x=ccf(pol[dur],medSpI[dur],na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
