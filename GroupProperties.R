@@ -12,17 +12,7 @@ fname <- file.choose()
 dat = read.csv(fname, header=TRUE)
 dat=na.omit(dat)
 head(dat)
-dat_out=data.frame()
-annd=vector()
-Avel=vector()
-pol=vector()
-AvSpI = vector()
-AvND=vector()
-GrA=vector()
-mnnd=vector()  #median nearest neighbour distance (might be a better metric than annd in our case)
-medSpI=vector()
-elon=vector()
-Tilt=vector()
+
 ##User-input (input the frame number for approach frame)
 cp=1
 
@@ -46,11 +36,23 @@ range = unique(dat$Frame)
 
 dat$x=(dat$xmin+dat$xmax)/2
 dat$y=(dat$ymin+dat$ymax)/2
+
+###Output
+dat_out=data.frame(matrix(ncol = 5, nrow = length(range)))
+colnames(dat_out)=c("Frame","mnnd","medSpI","pol","elon")
+annd=vector()
+Avel=vector()
+AvSpI = vector()
+AvND=vector()
+GrA=vector()
+Tilt=vector()
 ##################################################################################
 ###Group stucture ########################################################
-#remove frames which have less than 3 individuals
+
 for(i in 1:(length(range)-1)){
 i_dat = na.omit(dat[dat$Frame==range[i],])
+
+#remove frames which have less than 3 individuals
 if(nrow(i_dat)<3){
   next
 } 
@@ -58,24 +60,33 @@ if(nrow(i_dat)<3){
 ##Calculations for group level properties
 
   #median NND
-  mnnd[i]=median(nndist(i_dat$x,i_dat$y))
+  dat_out$Frame[i] = i_dat$Frame[1]
+  dat_out$mnnd[i]=median(nndist(i_dat$x,i_dat$y))
 
   #group elongation
   pc<-prcomp(i_dat[,c("x","y")], center = TRUE)
   pcs=summary(pc)
   pca1=max(pcs$importance[2,1],pcs$importance[2,2])
   pca2=min(pcs$importance[2,1],pcs$importance[2,2])
-  elon[i]=1-pca2/pca1
+  dat_out$elon[i]=1-pca2/pca1
   ##Slope
   pcSlope=pc$rotation["y","PC1"]/pc$rotation["x","PC1"]
   
  ##Average group velocity
     
     i_dat1=na.omit(dat[dat$Frame==range[i+10],])  #changed to i+10 to smoothen the error in detection, 29/06/2020
+    if(nrow(i_dat1) == 0){
+      next
+      }
     Avel[i]=sqrt( ((mean(i_dat1$x)-mean(i_dat$x))^2) + ((mean(i_dat1$y)-mean(i_dat$y))^2) )
     #Tilt
     AvelS = (mean(i_dat1$y)-mean(i_dat$y))/(mean(i_dat1$x)-mean(i_dat$x)) #Slope of group velocity
-    Tilt[i] =atan(AvelS)*180/pi - atan(pcSlope)*180/pi
+    tilt =abs(atan(AvelS)*180/pi - atan(pcSlope)*180/pi)
+    if(tilt<135 & tilt>45){
+      Tilt[i] = 1
+    }else if(tilt<45 & tilt>135){
+    Tilt[i] = 0
+    }
     
     new_dat=merge(x=i_dat1,y=i_dat,by="ID")
     new_dat$vx=new_dat$x.y-new_dat$x.x
@@ -87,11 +98,11 @@ if(nrow(i_dat)<3){
     if((nrow(new_dat1) >= 3) & (nrow(new_dat)>3)){
       #Average individual speed
       AvSpI[i] = mean(new_dat$vm)
-      medSpI[i]=median(new_dat$vm)
+      dat_out$medSpI[i]=median(new_dat$vm)
     new_dat$vx=new_dat$vx/new_dat$vm
     new_dat$vy=new_dat$vy/new_dat$vm
     vmod=sqrt(((sum(new_dat$vx))^2)+((sum(new_dat$vy))^2))
-    pol[i]=vmod/nrow(new_dat)
+    dat_out$pol[i]=vmod/nrow(new_dat)
     }else{
       next
     }
@@ -100,9 +111,9 @@ if(nrow(i_dat)<3){
   
 
 ##################Autocorrelation lengths#####################################
-mnnd=na.omit(mnnd)
-pol=na.omit(pol)
-medSpI=na.omit(medSpI)
+mnnd=na.omit(dat_out$mnnd)
+pol=na.omit(dat_out$pol)
+medSpI=na.omit(dat_out$medSpI)
 x=acf(mnnd,lag=3000,na.action=na.pass)
 x=acf(medSpI,lag=1800,na.action=na.pass)
 x=acf(pol,lag=1800,na.action=na.pass)
@@ -135,15 +146,16 @@ abline(v=which(range==cp),col="red")
 #Median individual speed
 medSpI1=SMA(medSpI,n=300)
 medSpI1=na.omit(medSpI1)
-mvalue=cpt.mean(medSpI1, method="BinSeg",Q=3,penalty="None")
+mvalue=cpt.mean(medSpI1, method="BinSeg",Q=4,penalty="None")
 plot(mvalue,ylab="medSpI",xlab="Time")#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
 
 
 #Elongation
-elon=na.omit(elon)
-mvalue=cpt.mean(elon, method="BinSeg",Q=2,penalty="None")
+elon1=SMA(elon,n=300)
+elon1=na.omit(elon1)
+mvalue=cpt.mean(elon1, method="BinSeg",Q=2,penalty="None")
 plot(mvalue,ylab="Elongation",xlab="Time")#,xaxt="n",type="b")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
@@ -151,7 +163,7 @@ abline(v=which(range==cp),col="red")
 #Tilt
 Tilt=na.omit(Tilt)
 mvalue=cpt.mean(Tilt, method="BinSeg",Q=2,penalty="None")
-plot(mvalue,ylab="Tilt",xlab="Time")#,xaxt="n",type="b")
+plot(Tilt,ylab="Tilt",xlab="Time")#,xaxt="n",type="b")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
 
@@ -159,41 +171,26 @@ abline(v=which(range==cp),col="red")
 
 ##################Group structure correlations####################################
 
-##pre perturbation
-pre=1:1000
+ran=5500:7000        ##change this range to calculate for specific events
 
-x=ccf(pol[pre],medSpI[pre],na.action = na.pass,lag.max=1000)
+dt=dat_out[ran,]
+
+x=ccf(dt$pol,dt$medSpI,na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
-x=ccf(mnnd[pre],pol[pre],na.action = na.pass,lag.max=1000)
+x=ccf(dt$mnnd,dt$pol,na.action = na.pass,lag.max=150)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
-x=ccf(mnnd[pre],medSpI[pre],na.action = na.pass,lag.max=1000)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
-
-##During perturbation
-dur=3900:5250
-
-x=ccf(pol[dur],medSpI[dur],na.action = na.pass,lag.max=1000)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
-
-x=ccf(mnnd[dur],pol[dur],na.action = na.pass,lag.max=1000)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
-
-x=ccf(mnnd[dur],medSpI[dur],na.action = na.pass,lag.max=1000)
+x=ccf(dt$mnnd,dt$medSpI,na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 
-##post perturbation 1
-pos=6500:8000
+###############################################################################
+### Choose 5 random individuals
 
-x=ccf(pol[pos],medSpI[pos],na.action = na.pass,lag.max=1000)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
-x=ccf(mnnd[pos],pol[pos],na.action = na.pass,lag.max=1000)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+fts = sample(x=unique(dat$ID[1:1000]),size=5)
 
-x=ccf(mnnd[pos],medSpI[pos],na.action = na.pass,lag.max=1000)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+############################################################################
 
 
