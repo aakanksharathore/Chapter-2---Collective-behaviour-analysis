@@ -192,5 +192,57 @@ mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 fts = sample(x=unique(dat$ID[1:1000]),size=5)
 
 ############################################################################
+####Pairs maintained before and after the event ##############################
+
+
+###Calculate average distance between pairs in a window before the event
+pair_mat = data.frame(matrix(ncol=4,nrow=50))
+colnames(pair_mat)=c("p1","p2","po1","po2")
+pre=1:1000
+ind=unique(dat$ID[dat$Frame %in% range[pre]]) 
+dt=dat[dat$Frame %in% range[pre],]
+dist_pre = matrix(nrow=length(ind),ncol=length(ind),dimnames=list(ind,ind))
+for(i in 1:length(ind)){
+  for(j in 1:length(ind)){
+    if(i!= j){
+    dist_pre[i,j] = mean((dt$x[dt$ID==ind[i]]-dt$x[dt$ID==ind[j]])^2 + (dt$y[dt$ID==ind[i]]-dt$y[dt$ID==ind[j]])^2)
+    }
+    }
+}
+
+##Find closest pairs
+for(i in 1:length(ind)){
+  x=which(dist_pre[i,]==min(na.omit(dist_pre[i,])),arr.ind=TRUE)
+  pair_mat$p1[i]=ind[i]
+  pair_mat$p2[i]=rownames(dist_pre)[x]
+  
+} 
+
+
+###Calculate average distance between pairs in a window after the event
+
+pre=6000:7000
+ind=unique(dat$ID[dat$Frame %in% range[pre]]) 
+dt=dat[dat$Frame %in% range[pre],]
+dist_pre = matrix(nrow=length(ind),ncol=length(ind),dimnames=list(ind,ind))
+for(i in 1:length(ind)){
+  for(j in 1:length(ind)){
+    if(i!= j){
+      dist_pre[i,j] = mean((dt$x[dt$ID==ind[i]]-dt$x[dt$ID==ind[j]])^2 + (dt$y[dt$ID==ind[i]]-dt$y[dt$ID==ind[j]])^2)
+    }
+  }
+}
+
+##Find closest pairs
+for(i in 1:length(ind)){
+  x=which(dist_pre[i,]==min(na.omit(dist_pre[i,])),arr.ind=TRUE)
+  pair_mat$po1[i]=ind[i]
+  pair_mat$po2[i]=rownames(dist_pre)[x]
+  
+} 
+
+
+###############################################################################
+############################Which individuals are outliers?##############
 
 
