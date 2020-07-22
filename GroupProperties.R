@@ -115,8 +115,8 @@ mnnd=na.omit(dat_out$mnnd)
 pol=na.omit(dat_out$pol)
 medSpI=na.omit(dat_out$medSpI)
 x=acf(mnnd,lag=3000,na.action=na.pass)
-x=acf(medSpI,lag=1800,na.action=na.pass)
-x=acf(pol,lag=1800,na.action=na.pass)
+x=acf(medSpI,lag=3000,na.action=na.pass)
+x=acf(pol,lag=3000,na.action=na.pass)
 which(round(x$acf,digits=1)==0.0)[1]
 
  ##Plots
@@ -129,11 +129,11 @@ ss=round((loc/30)-mm*60)
 
 mnnd1=SMA(mnnd,n=300)
 mnnd1=na.omit(mnnd1)
-mvalue=cpt.mean(mnnd1, method="BinSeg",Q=3,penalty="None")
+mvalue=cpt.mean(mnnd1, method="BinSeg",Q=5,penalty="None")
 plot(mvalue,ylab="median NND",xlab="Time")#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
-
+mvalue
 
 #Polarization time-series
 pol1=SMA(pol,n=300)
@@ -142,17 +142,19 @@ mvalue=cpt.mean(pol1, method="BinSeg",Q=3,penalty="None")
 plot(mvalue,ylab="Polarization",xlab="Time",ylim=c(0,1))#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
+mvalue
 
 #Median individual speed
 medSpI1=SMA(medSpI,n=300)
 medSpI1=na.omit(medSpI1)
-mvalue=cpt.mean(medSpI1, method="BinSeg",Q=4,penalty="None")
+mvalue=cpt.mean(medSpI1, method="BinSeg",Q=3,penalty="None")
 plot(mvalue,ylab="medSpI",xlab="Time")#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
-
+mvalue
 
 #Elongation
+elon=na.omit(dat_out$elon)
 elon1=SMA(elon,n=300)
 elon1=na.omit(elon1)
 mvalue=cpt.mean(elon1, method="BinSeg",Q=2,penalty="None")
@@ -171,17 +173,17 @@ abline(v=which(range==cp),col="red")
 
 ##################Group structure correlations####################################
 
-ran=5500:7000        ##change this range to calculate for specific events
+ran=4500:6000      ##change this range to calculate for specific events
 
 dt=dat_out[ran,]
 
 x=ccf(dt$pol,dt$medSpI,na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
-x=ccf(dt$mnnd,dt$pol,na.action = na.pass,lag.max=150)
+x=ccf(dt$mnnd,dt$pol,na.action = na.pass,lag.max=1000)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
-x=ccf(dt$mnnd,dt$medSpI,na.action = na.pass,lag.max=1000)
+x=ccf(dt$mnnd,dt$medSpI,na.action = na.pass,lag.max=150)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 
@@ -191,6 +193,7 @@ mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 fts = sample(x=unique(dat$ID[1:1000]),size=5)
 
+
 ############################################################################
 ####Pairs maintained before and after the event ##############################
 
@@ -198,7 +201,7 @@ fts = sample(x=unique(dat$ID[1:1000]),size=5)
 ###Calculate average distance between pairs in a window before the event
 pair_mat = data.frame(matrix(ncol=4,nrow=50))
 colnames(pair_mat)=c("p1","p2","po1","po2")
-pre=1:1000
+pre=1:1500
 ind=unique(dat$ID[dat$Frame %in% range[pre]]) 
 dt=dat[dat$Frame %in% range[pre],]
 dist_pre = matrix(nrow=length(ind),ncol=length(ind),dimnames=list(ind,ind))
@@ -221,7 +224,7 @@ for(i in 1:length(ind)){
 
 ###Calculate average distance between pairs in a window after the event
 
-pre=6000:7000
+pre=3500:5000
 ind=unique(dat$ID[dat$Frame %in% range[pre]]) 
 dt=dat[dat$Frame %in% range[pre],]
 dist_pre = matrix(nrow=length(ind),ncol=length(ind),dimnames=list(ind,ind))
@@ -241,7 +244,7 @@ for(i in 1:length(ind)){
   
 } 
 
-
+write.csv(file="/media/akanksharathore/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/3_CollectiveEscape/Graphs/26MarchEve_04_05/pairs.csv",x=pair_mat)
 ###############################################################################
 ############################Which individuals are outliers?##############
 
