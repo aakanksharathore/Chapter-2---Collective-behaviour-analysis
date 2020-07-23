@@ -56,6 +56,57 @@ plot(GrpInt$CCF.mnnd.pol[GrpInt$Event.type=="Post"]~x,pch=19,col="cyan",type="b"
 points(GrpInt$CCF.mnnd.mSPI[GrpInt$Event.type=="Post"]~x,pch=23,col="orange",type="b")
 
 
+##Position of randomly selected individuals
+
+fname <- file.choose()   ##IndPosition.csv
+PosDat = read.csv(fname, header=TRUE)
+
+
+##
+library(ggplot2)
+ggplot(PosDat, aes( y=as.factor(Pos..mid.edge..pre), fill=Sex)) + 
+  geom_bar(position="dodge", stat="count") + ggtitle("Before the perturbation") +ylab("Position")
+
+ggplot(PosDat, aes( y=as.factor(na.omit(Pos..mid.edge..post)), fill=Sex)) + 
+  geom_bar(position="dodge", stat="count") + ggtitle("After the perturbation") +ylab("Position")
+
+## Front-back position during coordinated walk
+ggplot(PosDat, aes( y=as.factor(na.omit(Pos..front.back..post)), fill=Sex)) + 
+  geom_bar(position="dodge", stat="count") + ggtitle("After the perturbation") +ylab("Position")
+
+
+
+##consistency of position
+PosDat$Pos..mid.edge..post = factor(PosDat$Pos..mid.edge..post, levels=c("Edge", "Mid"))
+
+for(i in 1:nrow(PosDat)){
+  
+  if(is.na(PosDat$Pos..mid.edge..post[i])){
+    next
+  }
+  if(PosDat$Pos..mid.edge..pre[i]==PosDat$Pos..mid.edge..post[i]){
+    PosDat$cons[i] = "same"
+    
+  }else{
+    PosDat$cons[i] = "changed"
+  }
+}
+
+##plot
+
+ggplot(PosDat, aes( y=cons, fill=Sex)) + 
+  geom_bar(position="dodge", stat="count") + ggtitle("Consistency of positions") +ylab("Position")
+
+
+## Pairs
+fname <- file.choose()   ##Pairs.csv
+pairD = read.csv(fname, header=TRUE)
+
+ggplot(pairD, aes( y=Pair)) + 
+  geom_bar(position="dodge", stat="count") +ylab("Pairs")
+
+
+
 
 
 
