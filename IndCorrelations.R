@@ -1,13 +1,16 @@
-##Code to plot individual time-series, indovidual-group correlations and inter-individual correlations
+##Code to plot Leader-Follower dynamics
+
 ##Written by AA on 17July2019
 
 fname <- file.choose()
 dat = read.csv(fname, header=TRUE)
+range=unique(dat$Frame)
+
 dat=na.omit(dat)
 dat_out=data.frame()
 cp=1  ##Approach frame
 
-o_range=unique(dat$Frame)
+
 ##Clean the data (remove trajectories which are present less han 10% of time)
 #dat=subset(dat, Frame > range[1200])
 cut_l=300 #length(unique(dat$Frame))*0.2
@@ -22,7 +25,7 @@ dat=NA
 dat=dat1
 
 
-range = unique(dat$Frame)
+#range = unique(dat$Frame)
 dat$x=(dat$xmin+dat$xmax)/2
 dat$y=(dat$ymin+dat$ymax)/2
 
@@ -41,7 +44,7 @@ for(i in 1:(length(range)-10)){
     new_dat=merge(x=i_dat1,y=i_dat,by="ID")
     new_dat$vx=new_dat$x.y-new_dat$x.x
     new_dat$vy=new_dat$y.y-new_dat$y.x
-    v = (new_dat$vx^2)+(new_dat$vy^2)
+    v = sqrt((new_dat$vx^2)+(new_dat$vy^2))
     fr = rep(range[i],nrow(new_dat))
     id=new_dat$ID
     heading= atan2(new_dat$vy,new_dat$vx)*180/pi
@@ -50,24 +53,17 @@ for(i in 1:(length(range)-10)){
 
 }
 head(vel)
-fts = unique(vel$ID)
-##Subset the data to remove the individuals who are present less tha 20%
-# of the time after the threat event
-# vel1=subset(vel,Frame>cp)
-# cut_off=(1/5)*length(unique(vel1$Frame))
-# dd=as.data.frame(table(vel1$ID))
-# trails=dd$Var1[dd$Freq>cut_off]
-# vel=subset(vel1,ID %in% trails)
-library(TTR)
-#smoothen the individual velocities for change point analysis
-for(i in 1:length(fts)){
-  dt_temp = vel[vel$ID==fts[i],]
-  if(nrow(dt_temp)<31){
-    next
-  }
-  vel$vs[vel$ID==fts[i]] = SMA(dt_temp$v,n=30) ##smoothening to one second
-  
-}
+
+# library(TTR)
+# #smoothen the individual velocities for change point analysis
+# for(i in 1:length(fts)){
+#   dt_temp = vel[vel$ID==fts[i],]
+#   if(nrow(dt_temp)<31){
+#     next
+#   }
+#   vel$vs[vel$ID==fts[i]] = SMA(dt_temp$v,n=30) ##smoothening to one second
+#   
+# }
 
 
 #Change point analysis for the speed of individuals and heading
@@ -75,23 +71,27 @@ library(changepoint)
 cpts=data.frame()
 cptl=data.frame()
 
+## choose preresponse+esc period to look at the initiation
+vel1=vel[vel$Frame %in% range[1230:2500],]
+fts = unique(vel1$ID)
 
 for(i in 1:length(fts)){
   
-dt_temp = vel[vel$ID==fts[i],] 
+dt_temp = vel1[vel1$ID==fts[i],] 
 dt_temp = na.omit(dt_temp)
 #if((nrow(dt_temp)<150) | (max(dt_temp$vs)<mean(na.omit(vel$vs)))){
 #  next
 #}     #commented on 24/06/2020, want to include all the individuals, however small there response may be
-if((nrow(dt_temp)<900)){     ##at least 30sec of response
+
+if((nrow(dt_temp)<900)){     ##at least 30sec of data
   next
 }
 ##For speed
-mvalue=cpt.mean(dt_temp$vs, method="BinSeg",Q=3,penalty="None")
+mvalue=cpt.mean(dt_temp$v, method="BinSeg",Q=3,penalty="None")
 plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n")
 cpts[i,"id"]=fts[i]
-cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$vs[mvalue@cpts+30]-dt_temp$vs[(mvalue@cpts)])>0)[1]]]
-cpts[i,"cp2"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$vs[mvalue@cpts+30]-dt_temp$vs[(mvalue@cpts)])>0)[2]]]
+cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$v[mvalue@cpts+30]-dt_temp$v[(mvalue@cpts)])>0)[1]]]
+cpts[i,"cp2"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$v[mvalue@cpts+30]-dt_temp$v[(mvalue@cpts)])>0)[2]]]
 cpts[i,"cpl"]=dt_temp$Frame[mvalue@cpts[length(mvalue@cpts)-1]]
 
 ##For heading
@@ -108,51 +108,10 @@ cpts[i,"cpl"]=dt_temp$Frame[mvalue@cpts[length(mvalue@cpts)-1]]
 
 
 #Hierarchy of change-points
-write.csv(file="Graphs/25MarchMor_01_02/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
+write.csv(file="Graphs/10MarchEve1_03_04/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
 Init=cpts$id[order(cpts$cp1)][1]
 
 cpts$id[order(cpts$cp1)]
-
-
-
-# #lead<- data.frame(nrows=length(fts)^2,ncol=2)
-# lead=vector()
-# lag=vector()
-# lagv=vector()
-# corrs=vector()
-# ct=1
-# for(i in 1:length(fts)){
-# for(j in 1:length(fts)){
-#   if(i<j){
-# dt_1 = vel1[vel1$ID==fts[i],]
-# dt_2 = vel1[vel1$ID==fts[j],]
-# if(nrow(dt_1)==0 | nrow(dt_2) == 0){
-#  next
-# }
-# ##cross correlation for 2 individuals
-# x=ccf(dt_1$v,dt_2$v,na.action = na.pass,lag.max=30,plot=FALSE)   ##set max lag to correlation length later
-# l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
-# corrs[ct]=max(abs(x$acf))
-# if(l<0){
-# #lead[i,j]=1 
-#   lead[ct]=fts[i]
-#   lag[ct]=fts[j]
-#   lagv[ct]=abs(l)
-#   ct=ct+1
-# }else if(l>0){
-#   #lead[i,j]=0
-#   lead[ct]=fts[j]
-#   lag[ct]=fts[i]
-#   lagv[ct]=l
-#   ct=ct+1
-# #}else{
-#  # lead[i,j]=-1
-# }
-#   
-# }
-# }
-# }
-
 
 
 ###Sliding window approach for the network analysis
@@ -232,7 +191,7 @@ for(i in 1:cn){
   
   #this gives you the colors you want for every point
   graphCol = pal(fine)[as.numeric(cut(closeness(net,mode="out"),breaks = fine))]  
-  setwd("/media/akanksharathore/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/3_CollectiveEscape/Graphs/25MarchMor_01_02/individual_networks/")
+  setwd("/media/akanksharathore/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/3_CollectiveEscape/Graphs/10MarchEve1_03_04/individual_networks/")
   png(filename=paste("d",i,".png",sep="_"))
   plot(net,edge.arrow.size=.1,layout=layout_with_fr,edge.label=d$lagv,vertex.color=graphCol)
   legend(x=1, y=.75, legend=c("Leader", "Influencers","Followers","Isolated"),pch=21, pt.bg=c("green","blue","red","white"), pt.cex=2, bty="n")
@@ -279,9 +238,12 @@ sort(sdInfl)
 ################################################################################
 #pairwise cross
 #pairwise cross-correlations for coordinated bouts,  set these in the beginning
-st=range[3900]#27500#25350
-sp=range[5250]#28000#26000
-vel1=vel[which((vel$Frame>=st) & (vel$Frame<=sp)),]
+st=range[4500]
+sp=range[5700]
+vel1<-NA
+fts<-NA
+vel1=vel[vel$Frame %in% (st:sp),]
+fts = unique(vel1$ID)
 #lead<- data.frame(nrows=length(fts)^2,ncol=2)
 lead=vector()
 lag=vector()
@@ -297,7 +259,7 @@ for(i in 1:length(fts)){
         next
       }
       ##cross correlation for 2 individuals
-      x=ccf(dt_1$v,dt_2$v,na.action = na.pass,lag.max=30,plot=FALSE)   ##set max lag to correlation length later
+      x=ccf(dt_1$v,dt_2$v,na.action = na.pass,lag.max=300,plot=FALSE)   ##max lag is 10 sec, 300 points out of 1000/1500
       l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
       
       if(l<0){
@@ -349,11 +311,11 @@ centr_degree(net, mode = "out")
 
 #closeness centrality
 sort(closeness(net,mode="out"),decreasing=TRUE)
-write.csv(file="Graphs/25MarchMor_01_02/Influence_event2.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
+write.csv(file="Graphs/10MarchEve1_03_04/Influence_event2.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
 
 
-##Display on image
-library(imager) 
-im <- load.image(file.choose()) # open the jpeg image and read it into an object 'j'
-plot(im)
-points(dat$x[dat$ID==39],dat$y[dat$ID==39],col="red")
+##Leader-follower pairs
+
+write.csv(file="Graphs/10MarchEve1_03_04/LeaderFollower2.csv", x=d)
+
+
