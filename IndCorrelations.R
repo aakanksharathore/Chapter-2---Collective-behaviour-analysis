@@ -83,15 +83,15 @@ dt_temp = na.omit(dt_temp)
 #  next
 #}     #commented on 24/06/2020, want to include all the individuals, however small there response may be
 
-if((nrow(dt_temp)<900)){     ##at least 30sec of data
+if((nrow(dt_temp)<300)){     ##at least 10sec of data
   next
 }
 ##For speed
 mvalue=cpt.mean(dt_temp$v, method="BinSeg",Q=3,penalty="None")
 plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n")
 cpts[i,"id"]=fts[i]
-cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$v[mvalue@cpts+30]-dt_temp$v[(mvalue@cpts)])>0)[1]]]
-cpts[i,"cp2"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$v[mvalue@cpts+30]-dt_temp$v[(mvalue@cpts)])>0)[2]]]
+cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$v[mvalue@cpts+1]-dt_temp$v[(mvalue@cpts-1)])>0)[1]]]
+cpts[i,"cp2"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$v[mvalue@cpts+1]-dt_temp$v[(mvalue@cpts-1)])>0)[2]]]
 cpts[i,"cpl"]=dt_temp$Frame[mvalue@cpts[length(mvalue@cpts)-1]]
 
 ##For heading
@@ -236,10 +236,9 @@ sort(sdInfl)
 #################################################################################
 ############################3For particlar events###########################
 ################################################################################
-#pairwise cross
-#pairwise cross-correlations for coordinated bouts,  set these in the beginning
-st=range[4500]
-sp=range[5700]
+#pairwise cross-correlations for escape events,  set these in the beginning
+st=range[1230]
+sp=range[2250]
 vel1<-NA
 fts<-NA
 vel1=vel[vel$Frame %in% (st:sp),]
@@ -258,8 +257,14 @@ for(i in 1:length(fts)){
       if(nrow(dt_1)==0 | nrow(dt_2) == 0){
         next
       }
+      
+      ##merge two data drames according to frame number
+      dt=merge(x=dt_1,y=dt_2,by="Frame")
+      if(nrow(dt)==0){
+        next
+      }
       ##cross correlation for 2 individuals
-      x=ccf(dt_1$v,dt_2$v,na.action = na.pass,lag.max=300,plot=FALSE)   ##max lag is 10 sec, 300 points out of 1000/1500
+      x=ccf(dt$v.x,dt$v.y,na.action = na.pass,lag.max=300,plot=FALSE)   ##max lag is 10 sec, 300 points out of 1000/1500
       l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
       
       if(l<0){
@@ -287,10 +292,14 @@ for(i in 1:length(fts)){
 ##Draw the network
 d=data.frame(lead,lag,lagv,corrs)
 
+##Network analysis
+
+
 ##Put threshold on the correlation strength, high threshold for now = 0.5
 d=subset(d,corrs>0.5)
+d1=d[ , !(names(d) %in% "corrs")]
 library('igraph')
-net <- graph_from_data_frame(d=d, vertices=fts, directed=T) 
+net <- graph_from_data_frame(d=d1, vertices=fts, directed=T) 
 E(net)       # The edges of the "net" object
 V(net)       # The vertices of the "net" object
 #V(net)$size <- log(closeness(net,mode="out")*100)*30
@@ -304,18 +313,13 @@ E(net)$type  # Edge attribute "type"
 plot(net,edge.arrow.size=.1,layout=layout_with_fr,edge.label=d$lagv)
 legend(x=1, y=.75, legend=c("Leader", "Influencers","Followers","Isolated"),pch=21, pt.bg=c("green","blue","red","white"), pt.cex=2, bty="n")
 
-##Network analysis
 
-#Degree centrality
-centr_degree(net, mode = "out")
-
-#closeness centrality
 sort(closeness(net,mode="out"),decreasing=TRUE)
-write.csv(file="Graphs/10MarchEve1_03_04/Influence_event2.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
+write.csv(file="Graphs/10MarchEve1_03_04/Escape_event.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
 
 
 ##Leader-follower pairs
 
-write.csv(file="Graphs/10MarchEve1_03_04/LeaderFollower2.csv", x=d)
+write.csv(file="Graphs/10MarchEve1_03_04/Leader_follower_esc.csv", x=d)
 
 
