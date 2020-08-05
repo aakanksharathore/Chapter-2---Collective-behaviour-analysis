@@ -54,26 +54,26 @@ for(i in 1:(length(range)-10)){
 }
 head(vel)
 
-# library(TTR)
-# #smoothen the individual velocities for change point analysis
-# for(i in 1:length(fts)){
-#   dt_temp = vel[vel$ID==fts[i],]
-#   if(nrow(dt_temp)<31){
-#     next
-#   }
-#   vel$vs[vel$ID==fts[i]] = SMA(dt_temp$v,n=30) ##smoothening to one second
-#   
-# }
+
+## choose preresponse+esc period to look at the initiation
+vel1=vel[vel$Frame %in% range[3600:5850],]
+fts = unique(vel1$ID)
+
+library(TTR)
+#smoothen the individual velocities for change point analysis
+for(i in 1:length(fts)){
+  dt_temp = vel1[vel1$ID==fts[i],]
+  if(nrow(dt_temp)<31){
+    next
+  }
+  vel1$vs[vel1$ID==fts[i]] = SMA(dt_temp$v,n=30) ##smoothening to one second
+
+}
 
 
 #Change point analysis for the speed of individuals and heading
 library(changepoint)
 cpts=data.frame()
-cptl=data.frame()
-
-## choose preresponse+esc period to look at the initiation
-vel1=vel[vel$Frame %in% range[1230:2500],]
-fts = unique(vel1$ID)
 
 for(i in 1:length(fts)){
   
@@ -87,33 +87,117 @@ if((nrow(dt_temp)<300)){     ##at least 10sec of data
   next
 }
 ##For speed
-mvalue=cpt.mean(dt_temp$v, method="BinSeg",Q=3,penalty="None")
-plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n")
-cpts[i,"id"]=fts[i]
-cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$v[mvalue@cpts+1]-dt_temp$v[(mvalue@cpts-1)])>0)[1]]]
-cpts[i,"cp2"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$v[mvalue@cpts+1]-dt_temp$v[(mvalue@cpts-1)])>0)[2]]]
-cpts[i,"cpl"]=dt_temp$Frame[mvalue@cpts[length(mvalue@cpts)-1]]
+mvalue=cpt.mean(dt_temp$vs, method="BinSeg",Q=5,penalty="None")
+plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n",main=paste(fts[i]))
 
-##For heading
-# mvalue=cpt.mean(dt_temp$head, method="BinSeg",Q=15,penalty="None")
-# #plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n")
-# cptl[i,"id"]=fts[i]
-# cptl[i,"cp1"]=dt_temp$Frame[mvalue@cpts[1]]
-# cptl[i,"cp2"]=dt_temp$Frame[mvalue@cpts[2]]
-# cptl[i,"cpl"]=dt_temp$Frame[mvalue@cpts[length(mvalue@cpts)-1]]
+cpts[i,"id"]=fts[i]
+cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which(((dt_temp$vs[mvalue@cpts+1]-dt_temp$vs[(mvalue@cpts-1)])>0) & (dt_temp$vs[mvalue@cpts+1]>15))[1]]]
+#cpts[i,"v"]=dt_temp$vs[dt_temp$Frame==(cpts[i,"cp1"])]
+
 }
 
-##Changes needs to be done for cptl, not showing correct jumpes in heading
-## heading doesn't seem like a relaible indicator of initiators as of now
-
-
-#Hierarchy of change-points
-write.csv(file="Graphs/10MarchEve1_03_04/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
-Init=cpts$id[order(cpts$cp1)][1]
-
 cpts$id[order(cpts$cp1)]
+#Hierarchy of change-points
+write.csv(file="Graphs/28MarchEve_01_02/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
 
 
+
+
+#################################################################################
+############################3For particlar events###########################
+################################################################################
+#pairwise cross-correlations for escape events,  set these in the beginning
+st=range[7200]
+sp=range[9000]
+vel1<-NA
+fts<-NA
+vel1=vel[vel$Frame %in% (st:sp),]
+fts = unique(vel1$ID)
+#lead<- data.frame(nrows=length(fts)^2,ncol=2)
+lead=vector()
+lag=vector()
+lagv=numeric()
+corrs=numeric()
+ct=1
+for(i in 1:length(fts)){
+  for(j in 1:length(fts)){
+    if(i<j){
+      dt_1 = vel1[vel1$ID==fts[i],]
+      dt_2 = vel1[vel1$ID==fts[j],]
+      if(nrow(dt_1)==0 | nrow(dt_2) == 0){
+        next
+      }
+      
+      ##merge two data drames according to frame number
+      dt=merge(x=dt_1,y=dt_2,by="Frame")
+      if(nrow(dt)==0){
+        next
+      }
+      ##cross correlation for 2 individuals
+      x=ccf(dt$v.x,dt$v.y,na.action = na.pass,lag.max=150,plot=FALSE)   ##max lag is 5 sec, 150 points out of 1000/1500
+      l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
+      
+      if(l<0){
+        corrs[ct]=max(abs(x$acf)) 
+        lead[ct]=as.character(fts[i])
+        lag[ct]=as.character(fts[j])
+        lagv[ct]=abs(l)
+        ct=ct+1
+      }else if(l>0){
+        corrs[ct]=max(abs(x$acf))
+        lead[ct]=as.character(fts[j])
+        lag[ct]=as.character(fts[i])
+        lagv[ct]=abs(l)
+        ct=ct+1
+        #}else{
+        # lead[i,j]=-1
+        
+      }
+    }
+  }
+}
+
+
+
+##Draw the network
+d=data.frame(lead,lag,lagv,corrs)
+
+##Network analysis
+
+
+##Put threshold on the correlation strength, high threshold for now = 0.5
+d=subset(d,corrs>0.5)
+d1=d[ , !(names(d) %in% "corrs")]
+library('igraph')
+net <- graph_from_data_frame(d=d1, vertices=fts, directed=T) 
+E(net)       # The edges of the "net" object
+V(net)       # The vertices of the "net" object
+#V(net)$size <- log(closeness(net,mode="out")*100)*30
+# node we'll create a new color variable as a node property
+V(net)$color[closeness(net,mode="out") %in% sort(closeness(net,mode="out"),decreasing=TRUE)[1:5]] <- "green"
+V(net)$color[closeness(net,mode="out") %in% sort(closeness(net,mode="out"),decreasing=FALSE)[1:5]] <- "red"
+
+E(net)$type  # Edge attribute "type"
+#V(net)$label <- ifelse( closeness(net,mode="out")==max(closeness(net,mode="out")), V(net)$name, NA )
+#graphCol = pal(fine)[as.numeric(cut(closeness(net,mode="out"),breaks = fine))]  
+plot(net,edge.arrow.size=.1,layout=layout_with_fr,edge.label=d$lagv)
+legend(x=1, y=.75, legend=c("Leader", "Influencers","Followers","Isolated"),pch=21, pt.bg=c("green","blue","red","white"), pt.cex=2, bty="n")
+
+
+sort(closeness(net,mode="out"),decreasing=TRUE)
+write.csv(file="Graphs/28MarchEve_01_02/InfluenceRank.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
+
+
+##Leader-follower pairs
+
+write.csv(file="Graphs/28MarchEve_01_02/Leader_follower_pairs.csv", x=d)
+
+##Community structure
+coms=components(net,mode=c("weak","strong"))
+hist(coms$csize,xlab="Group size",col="cyan",main=paste("Network modularity, N=",length(fts)))
+table(coms$csize)
+
+#########################################################################################
 ###Sliding window approach for the network analysis
 ccNet=vector() #Average closeness centrality of the network
 N=length(range)-1
@@ -233,93 +317,3 @@ meanInfl=tapply(as.numeric(as.character(Inflnet$ccIndex)),Inflnet$ID,mean)  ##Ty
 sdInfl=tapply(as.numeric(as.character(Inflnet$ccIndex)),Inflnet$ID,sd)    #consistency-lower the SD more consistent
 sort(meanInfl,decreasing=TRUE)
 sort(sdInfl)
-#################################################################################
-############################3For particlar events###########################
-################################################################################
-#pairwise cross-correlations for escape events,  set these in the beginning
-st=range[1230]
-sp=range[2250]
-vel1<-NA
-fts<-NA
-vel1=vel[vel$Frame %in% (st:sp),]
-fts = unique(vel1$ID)
-#lead<- data.frame(nrows=length(fts)^2,ncol=2)
-lead=vector()
-lag=vector()
-lagv=numeric()
-corrs=numeric()
-ct=1
-for(i in 1:length(fts)){
-  for(j in 1:length(fts)){
-    if(i<j){
-      dt_1 = vel1[vel1$ID==fts[i],]
-      dt_2 = vel1[vel1$ID==fts[j],]
-      if(nrow(dt_1)==0 | nrow(dt_2) == 0){
-        next
-      }
-      
-      ##merge two data drames according to frame number
-      dt=merge(x=dt_1,y=dt_2,by="Frame")
-      if(nrow(dt)==0){
-        next
-      }
-      ##cross correlation for 2 individuals
-      x=ccf(dt$v.x,dt$v.y,na.action = na.pass,lag.max=300,plot=FALSE)   ##max lag is 10 sec, 300 points out of 1000/1500
-      l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
-      
-      if(l<0){
-        corrs[ct]=max(abs(x$acf)) 
-        lead[ct]=as.character(fts[i])
-        lag[ct]=as.character(fts[j])
-        lagv[ct]=abs(l)
-        ct=ct+1
-      }else if(l>0){
-        corrs[ct]=max(abs(x$acf))
-        lead[ct]=as.character(fts[j])
-        lag[ct]=as.character(fts[i])
-        lagv[ct]=abs(l)
-        ct=ct+1
-        #}else{
-        # lead[i,j]=-1
-
-      }
-    }
-  }
-}
-
-
-
-##Draw the network
-d=data.frame(lead,lag,lagv,corrs)
-
-##Network analysis
-
-
-##Put threshold on the correlation strength, high threshold for now = 0.5
-d=subset(d,corrs>0.5)
-d1=d[ , !(names(d) %in% "corrs")]
-library('igraph')
-net <- graph_from_data_frame(d=d1, vertices=fts, directed=T) 
-E(net)       # The edges of the "net" object
-V(net)       # The vertices of the "net" object
-#V(net)$size <- log(closeness(net,mode="out")*100)*30
-# node we'll create a new color variable as a node property
-V(net)$color[closeness(net,mode="out") %in% sort(closeness(net,mode="out"),decreasing=TRUE)[1:5]] <- "green"
-V(net)$color[closeness(net,mode="out") %in% sort(closeness(net,mode="out"),decreasing=FALSE)[1:5]] <- "red"
-
-E(net)$type  # Edge attribute "type"
-#V(net)$label <- ifelse( closeness(net,mode="out")==max(closeness(net,mode="out")), V(net)$name, NA )
-#graphCol = pal(fine)[as.numeric(cut(closeness(net,mode="out"),breaks = fine))]  
-plot(net,edge.arrow.size=.1,layout=layout_with_fr,edge.label=d$lagv)
-legend(x=1, y=.75, legend=c("Leader", "Influencers","Followers","Isolated"),pch=21, pt.bg=c("green","blue","red","white"), pt.cex=2, bty="n")
-
-
-sort(closeness(net,mode="out"),decreasing=TRUE)
-write.csv(file="Graphs/10MarchEve1_03_04/Escape_event.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
-
-
-##Leader-follower pairs
-
-write.csv(file="Graphs/10MarchEve1_03_04/Leader_follower_esc.csv", x=d)
-
-
