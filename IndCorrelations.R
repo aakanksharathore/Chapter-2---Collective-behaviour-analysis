@@ -107,8 +107,8 @@ write.csv(file="Graphs/28MarchEve_01_02/response_Initiation.csv", x=cpts$id[orde
 ############################3For particlar events###########################
 ################################################################################
 #pairwise cross-correlations for escape events,  set these in the beginning
-st=range[7200]
-sp=range[9000]
+st=range[6000]
+sp=range[7500]
 vel1<-NA
 fts<-NA
 vel1=vel[vel$Frame %in% (st:sp),]
@@ -136,7 +136,9 @@ for(i in 1:length(fts)){
       ##cross correlation for 2 individuals
       x=ccf(dt$v.x,dt$v.y,na.action = na.pass,lag.max=150,plot=FALSE)   ##max lag is 5 sec, 150 points out of 1000/1500
       l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
-      
+      if(length(l)==0){
+        next
+      }
       if(l<0){
         corrs[ct]=max(abs(x$acf)) 
         lead[ct]=as.character(fts[i])
@@ -184,6 +186,11 @@ plot(net,edge.arrow.size=.1,layout=layout_with_fr,edge.label=d$lagv)
 legend(x=1, y=.75, legend=c("Leader", "Influencers","Followers","Isolated"),pch=21, pt.bg=c("green","blue","red","white"), pt.cex=2, bty="n")
 
 
+##Community structure
+coms=components(net,mode=c("weak","strong"))
+hist(coms$csize,xlab="Group size",col="cyan",main=paste("Network modularity, N=",length(fts)))
+table(coms$csize)
+
 sort(closeness(net,mode="out"),decreasing=TRUE)
 write.csv(file="Graphs/28MarchEve_01_02/InfluenceRank.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
 
@@ -192,10 +199,6 @@ write.csv(file="Graphs/28MarchEve_01_02/InfluenceRank.csv", x=sort(closeness(net
 
 write.csv(file="Graphs/28MarchEve_01_02/Leader_follower_pairs.csv", x=d)
 
-##Community structure
-coms=components(net,mode=c("weak","strong"))
-hist(coms$csize,xlab="Group size",col="cyan",main=paste("Network modularity, N=",length(fts)))
-table(coms$csize)
 
 #########################################################################################
 ###Sliding window approach for the network analysis
