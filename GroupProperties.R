@@ -173,14 +173,14 @@ abline(v=which(range==cp),col="red")
 
 ##################Group structure correlations####################################
 
-ran=4500:6000      ##change this range to calculate for specific events
+ran=7500:9000      ##change this range to calculate for specific events
 
 dt=dat_out[ran,]
 
-x=ccf(dt$pol,dt$medSpI,na.action = na.pass,lag.max=1000)
+x=ccf(dt$pol,dt$medSpI,na.action = na.pass,lag.max=150)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
-x=ccf(dt$mnnd,dt$pol,na.action = na.pass,lag.max=1000)
+x=ccf(dt$mnnd,dt$pol,na.action = na.pass,lag.max=150)
 mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
 
 x=ccf(dt$mnnd,dt$medSpI,na.action = na.pass,lag.max=150)

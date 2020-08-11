@@ -1,5 +1,5 @@
 
-fname <- file.choose()
+fname <- file.choose()   #Groupinteractionrules.csv
 GrpInt = read.csv(fname, header=TRUE)
 
 ##Group structure correlations
@@ -43,17 +43,17 @@ boxplot(abs(CCF.mnnd.mSPI) ~ Event.type, data=GrpInt,col="lightblue",main="mNND~
 par(mfrow=c(4,1))
 x=(1:length(GrpInt$Video[GrpInt$Event.type=="Pre"]))
 
-plot(GrpInt$CCF.mnnd.pol[GrpInt$Event.type=="Pre"]~x,pch=19,col="cyan",type="b",ylim=c(-1,1),ylab="CCF",xlab="Videos",main="Pre")
-points(GrpInt$CCF.mnnd.mSPI[GrpInt$Event.type=="Pre"]~x,pch=23,col="orange",type="b")
+plot(GrpInt$lag.mnnd.pol[GrpInt$Event.type=="Pre"]~x,pch=19,col="cyan",type="b",ylim=c(-150,150),ylab="CCF",xlab="Videos",main="Pre")
+points(GrpInt$lag.mnnd.mSPI[GrpInt$Event.type=="Pre"]~x,pch=23,col="orange",type="b")
 
-plot(GrpInt$CCF.mnnd.pol[GrpInt$Event.type=="Esc"]~x,pch=19,col="cyan",type="b",ylim=c(-1,1),ylab="CCF",xlab="Videos",main="Esc")
-points(GrpInt$CCF.mnnd.mSPI[GrpInt$Event.type=="Esc"]~x,pch=23,col="orange",type="b")
+plot(GrpInt$lag.mnnd.pol[GrpInt$Event.type=="Esc"]~x,pch=19,col="cyan",type="b",ylim=c(-150,150),ylab="CCF",xlab="Videos",main="Esc")
+points(GrpInt$lag.mnnd.mSPI[GrpInt$Event.type=="Esc"]~x,pch=23,col="orange",type="b")
 
-plot(GrpInt$CCF.mnnd.pol[GrpInt$Event.type=="Coord"]~x,pch=19,col="cyan",type="b",ylim=c(-1,1),ylab="CCF",xlab="Videos",main="Coord")
-points(GrpInt$CCF.mnnd.mSPI[GrpInt$Event.type=="Coord"]~x,pch=23,col="orange",type="b")
+plot(GrpInt$lag.mnnd.pol[GrpInt$Event.type=="Coord"]~x,pch=19,col="cyan",type="b",ylim=c(-150,150),ylab="CCF",xlab="Videos",main="Coord")
+points(GrpInt$lag.mnnd.mSPI[GrpInt$Event.type=="Coord"]~x,pch=23,col="orange",type="b")
 
-plot(GrpInt$CCF.mnnd.pol[GrpInt$Event.type=="Post"]~x,pch=19,col="cyan",type="b",ylim=c(-1,1),ylab="CCF",xlab="Videos",main="Post")
-points(GrpInt$CCF.mnnd.mSPI[GrpInt$Event.type=="Post"]~x,pch=23,col="orange",type="b")
+plot(GrpInt$lag.mnnd.pol[GrpInt$Event.type=="Post"]~x,pch=19,col="cyan",type="b",ylim=c(-150,150),ylab="CCF",xlab="Videos",main="Post")
+points(GrpInt$lag.mnnd.mSPI[GrpInt$Event.type=="Post"]~x,pch=23,col="orange",type="b")
 
 
 ##Position of randomly selected individuals

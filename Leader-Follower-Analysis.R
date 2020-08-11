@@ -20,16 +20,19 @@ resp_pat=read.csv(fname,header=TRUE)
 
 resp = resp_pat[resp_pat$Type=="Response",]
 
-barplot(table(resp$Sex),xlab="Sex",main="N=50")   #iNITIATORS SEX
+barplot(table(resp$Sex),xlab="Sex",main="N=50",col=c("cyan","orange","lightgreen","lightpink"))   #iNITIATORS SEX
+barplot(table(resp$Position.Front.back.),xlab="Position",main="N=50",col=c("cyan","orange","lightgreen"))   #iNITIATORS position
+barplot(table(resp$Position.edge.inside.),xlab="Position",main="N=50",col=c("cyan","orange","lightgreen"))   #iNITIATORS position
+
 
 ## Position
 dat1=resp[resp$Sex=="F",]
-barplot(table(dat1$Position.Front.back.),xlab="Front-Back position",main="N=10") 
-barplot(table(dat1$Position.edge.inside.),xlab="Mid-periphery position",main="N=10") 
+barplot(table(dat1$Position.Front.back.),xlab="Front-Back position",main=paste("N=",nrow(dat1)),col=c("cyan","orange","lightgreen","lightpink")) 
+barplot(table(dat1$Position.edge.inside.),xlab="Mid-periphery position",main=paste("N=",nrow(dat1)),col=c("cyan","orange","lightgreen","lightpink"))  
 
 dat1=resp[resp$Sex=="BM",]
-barplot(table(dat1$Position.Front.back.),xlab="Front-Back position",main="N=8") 
-barplot(table(dat1$Position.edge.inside.),xlab="Mid-periphery position",main="N=10") 
+barplot(table(dat1$Position.Front.back.),xlab="Front-Back position",main=paste("N=",nrow(dat1)),col=c("cyan","orange","lightgreen","lightpink")) 
+barplot(table(dat1$Position.edge.inside.),xlab="Mid-periphery position",main=paste("N=",nrow(dat1)),col=c("cyan","orange","lightgreen","lightpink")) 
 
 dat1=resp[resp$Sex=="Juv",]
 barplot(table(dat1$Position.Front.back.),xlab="Front-Back position",main="N=9") 
@@ -39,7 +42,10 @@ barplot(table(dat1$Position.edge.inside.),xlab="Mid-periphery position",main="N=
 resp=NA
 resp = resp_pat[resp_pat$Type=="Last",]
 
-barplot(table(resp$Sex),xlab="Sex",main="N=50")   #iNITIATORS SEX
+barplot(table(resp$Sex),xlab="Sex",main="N=50",col=c("cyan","orange","lightgreen","lightpink"))   #iNITIATORS SEX
+barplot(table(resp$Position.Front.back.),xlab="Position",main="N=50",col=c("cyan","orange","lightgreen"))   #iNITIATORS position
+barplot(table(resp$Position.edge.inside.),xlab="Position",main="N=50",col=c("cyan","orange","lightgreen"))   #iNITIATORS position
+
 
 ## Position
 dat1=resp[resp$Sex=="F",]
@@ -59,23 +65,28 @@ barplot(table(dat1$Position.edge.inside.),xlab="Mid-periphery position",main=pas
 
 lead= resp_pat[resp_pat$Type=="Leaders",]
 
-barplot(table(lead$Sex),xlab="Sex",main=paste("N=",nrow(lead)))   #Leader's sex
+barplot(table(lead$Sex),xlab="Sex",main=paste("N=",nrow(lead)),col=c("cyan","orange","lightgreen","lightpink"))   #Leader's sex
+barplot(table(lead$Position.Front.back.),xlab="Position",main=paste("N=",nrow(lead)),col=c("cyan","orange","lightgreen","lightpink"))   #Leader's sex
+barplot(table(lead$Position.edge.inside.),xlab="Position",main=paste("N=",nrow(lead)),col=c("cyan","orange","lightgreen","lightpink"))   #Leader's sex
+
 
 ## Position
 dat1=lead[lead$Sex=="F",]
 barplot(table(dat1$Position.Front.back.),xlab="Front-Back position",main=paste("N=",nrow(dat1))) 
 barplot(table(dat1$Position.edge.inside.),xlab="Mid-periphery position",main=paste("N=",nrow(dat1))) 
 
-dat1=lead[lead$Sex=="BM",]
+dat1=lead[lead$Sex=="M",]
 barplot(table(dat1$Position.Front.back.),xlab="Front-Back position",main=paste("N=",nrow(dat1))) 
 barplot(table(dat1$Position.edge.inside.),xlab="Mid-periphery position",main=paste("N=",nrow(dat1))) 
 
 
 ## Isolated individuals
-
+lead=NULL
 lead= resp_pat[resp_pat$Type=="Isolated",]
 
-barplot(table(lead$Sex),xlab="Sex",main=paste("N=",nrow(lead)))   #Leader's sex
+barplot(table(lead$Sex),xlab="Sex",main=paste("N=",nrow(lead)),col=c("cyan","orange","lightgreen","lightpink"))   #Leader's sex
+barplot(table(lead$Position.Front.back.),xlab="Position",main=paste("N=",nrow(lead)),col=c("cyan","orange","lightgreen","lightpink"))   #Leader's sex
+barplot(table(lead$Position.edge.inside.),xlab="Position",main=paste("N=",nrow(lead)),col=c("cyan","orange","lightgreen","lightpink"))   #Leader's sex
 
 ## Position
 dat1=lead[lead$Sex=="M",]
