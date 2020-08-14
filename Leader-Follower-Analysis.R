@@ -1,5 +1,7 @@
 ## leader-Follower analysis results\
-
+##
+library(ggplot2)
+library(viridis)
 ##Part1 - community modularity - emergence of leader-follower dynamics
 fname <- file.choose()   # Community structure.cs
 dat = read.csv(fname, header=TRUE)
@@ -60,7 +62,27 @@ dat1=resp[resp$Sex=="Juv",]
 barplot(table(dat1$Position.Front.back.),xlab="Front-Back position",main=paste("N=",nrow(dat1))) 
 barplot(table(dat1$Position.edge.inside.),xlab="Mid-periphery position",main=paste("N=",nrow(dat1))) 
 
+################# Proportions wrt actual distribution
+fname <- file.choose()   ##PositionProportions.csv
+PosProp = read.csv(fname, header=TRUE)
 
+PosProp$Pos=factor(PosProp$Pos,levels=c("Far","Near","Mid"))
+
+barplot(tapply(PosProp$Number,PosProp$Pos,FUN = sum),col=c("cyan","orange","lightgreen"),ylim=c(0,200))
+
+##patterns for each video
+
+ggplot(PosProp,aes(x=Video,y=propI))+
+  geom_bar(stat="identity",aes(fill=Pos))+
+  ylab("Proportion of initiators")+
+  scale_fill_manual(values=c("cyan4","orange","purple"))+
+  theme_classic() # Classic theme
+
+ggplot(PosProp,aes(x=Video,y=propL))+
+  geom_bar(stat="identity",aes(fill=Pos))+
+  ylab("Proportion of late responders")+
+  scale_fill_manual(values=c("cyan4","orange","purple"))+
+  theme_classic() # Classic theme
 #################### Leaders
 
 lead= resp_pat[resp_pat$Type=="Leaders",]
