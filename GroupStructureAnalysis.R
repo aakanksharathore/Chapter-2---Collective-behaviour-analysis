@@ -144,10 +144,32 @@ pairD = read.csv(fname, header=TRUE)
 ggplot(pairD, aes( y=Pair)) + 
   geom_bar(position="dodge", stat="count") +ylab("Pairs")
 
+##NULL model for the pairs association
+
+#Combinations for n elements
+n=39
+pairsm = matrix(nrow=1000,ncol=n)
+
+for(i in 1:1000){
+  
+pairsm[i,]=sample(x=combn(x=1:n, m=2, paste, collapse="-"),size=n)
+
+}
+
+perc=numeric()
+for(i in 2:1000){
+perc[i-1]=length(intersect(x=pairsm[1,],y=pairsm[i,]))
+}
+
+perc=(perc/n)*100
+mean(perc)
+range(perc)
+
+fname <- file.choose()   ##associations_null_model.csv
+assoN = read.csv(fname, header=TRUE)
+
+barplot(cbind(assoN$percent,assoN$random),beside=TRUE,col=rep(c("cyan","orange"),times=c(10,10)),xlab="Videos",ylab="Percent associations")
+legend("topleft",legend=c("Associations observed","Associations expected just by chance"),col=c("cyan","orange"),fill=c("cyan","orange"))
 
 
-
-
-
-
-
+        
