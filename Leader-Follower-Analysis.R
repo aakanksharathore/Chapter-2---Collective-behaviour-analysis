@@ -9,10 +9,16 @@ View(dat)
 
 
 ##
-boxplot(X.clusters..2. ~ Event, data=dat,col="#009999",ylim=c(0,5),main="Number of clusters")
+boxplot(solitaryP ~ Event, data=dat,col="#009999",ylim=c(0,1),main="Number of clusters")
 boxplot(X.solitary ~ Event, data=dat,col="#009999",main="No. of solitary")
 
+ggplot(dat, aes(x=factor(Event,levels=c("Pre","Esc","Coord","Post")), y=solitaryP)) + geom_jitter(color="cyan4",width=0.06) + xlab("Event type")+
+  ylab("Proportion of individuals who are solitary")+stat_summary(aes(y = solitaryP,group=1), fun.y=median, colour="red", geom="point",group=1)+
+  theme_classic() # Classic theme
 
+ggplot(dat, aes(x=factor(Event,levels=c("Pre","Esc","Coord","Post")), y=ConnectedN)) + geom_jitter(color="cyan4",width=0.06) + xlab("Event type")+
+  ylab("Connected individuals")+stat_summary(aes(y = ConnectedN,group=1), fun.y=median, colour="red", geom="point",group=1)+
+  theme_classic() # Classic theme
 ##################################  Response sequence  #################
 
 fname=file.choose()  #responsepatterns_leaders.csv
@@ -70,6 +76,10 @@ PosProp$Pos=factor(PosProp$Pos,levels=c("Far","Near","Mid"))
 
 barplot(tapply(PosProp$Number,PosProp$Pos,FUN = sum),col=c("cyan","orange","lightgreen"),ylim=c(0,200))
 
+
+barplot(tapply(PosProp$propI,PosProp$Pos,FUN = mean),col=c("cyan","orange","lightgreen"),main="N=50",ylab="Proportion responding")
+barplot(tapply(PosProp$propL,PosProp$Pos,FUN = mean),col=c("cyan","orange","lightgreen"),main="N=50",ylab="Proportion responding")
+
 ##patterns for each video
 
 ggplot(PosProp,aes(x=Video,y=propI))+
@@ -83,6 +93,34 @@ ggplot(PosProp,aes(x=Video,y=propL))+
   ylab("Proportion of late responders")+
   scale_fill_manual(values=c("cyan4","orange","purple"))+
   theme_classic() # Classic theme
+
+################# Proportions wrt actual distribution
+fname <- file.choose()   ##AScomposition.csv
+ASprop = read.csv(fname, header=TRUE)
+
+#PosProp$Pos=factor(PosProp$Pos,levels=c("Far","Near","Mid"))
+
+barplot(tapply(ASprop$Number,ASprop$Sex,FUN = sum),col=c("cyan","orange","lightgreen","lightpink"),ylim=c(0,110))
+
+barplot(tapply(ASprop$IniP,ASprop$Sex,FUN = mean),col=c("cyan","orange","lightgreen","lightpink"),main="N=50",ylab="Proportion responding")
+barplot(tapply(ASprop$LastP,ASprop$Sex,FUN = mean),col=c("cyan","orange","lightgreen","lightpink"),main="N=50",ylab="Proportion responding")
+
+##patterns for each video
+
+ggplot(ASprop,aes(x=Vid,y=IniP))+
+  geom_bar(stat="identity",aes(fill=Sex))+
+  ylab("Proportion of initiators")+
+  scale_fill_manual(values=c("cyan4","orange","purple","lightgreen"))+
+  theme_classic() # Classic theme
+
+ggplot(ASprop,aes(x=Vid,y=LastP))+
+  geom_bar(stat="identity",aes(fill=Sex))+
+  ylab("Proportion of late responders")+
+  scale_fill_manual(values=c("cyan4","orange","purple","lightgreen"))+
+  theme_classic() # Classic theme
+
+
+
 #################### Leaders
 
 lead= resp_pat[resp_pat$Type=="Leaders",]
@@ -145,3 +183,34 @@ barplot(table(dat1$SexF),xlab="Sex of followers",main=paste("N=",nrow(dat1)))
 dat1=lf_pair[lf_pair$SexL=="F",]
 barplot(table(dat1$PosL),xlab="Front-Back position",main=paste("N=",nrow(dat1))) 
 barplot(table(dat1$SexF),xlab="Sex of followers",main=paste("N=",nrow(dat1))) 
+
+
+##Leader-follower proportions
+
+barplot(tapply(ASprop$LeaderP,ASprop$Sex,FUN = mean),col=c("cyan","orange","lightgreen","lightpink"),main="N=50",ylab="Influential individuals")
+barplot(tapply(ASprop$IsolatedP,ASprop$Sex,FUN = mean),col=c("cyan","orange","lightgreen","lightpink"),main="N=50",ylab="Isolated individuals")
+
+fname <- file.choose()   ##FrontBackPositionProportions.csv
+PosProp = read.csv(fname, header=TRUE)
+
+#PosProp$Pos=factor(PosProp$Pos,levels=c("Far","Near","Mid"))
+
+barplot(tapply(PosProp$Number,PosProp$Pos,FUN = sum),col=c("cyan","orange","lightgreen"),ylim=c(0,200))
+
+
+barplot(tapply(PosProp$LeadI,PosProp$Pos,FUN = mean),col=c("cyan","orange","lightgreen"),main="N=50",ylab="Leaders")
+barplot(tapply(PosProp$IsoI,PosProp$Pos,FUN = mean),col=c("cyan","orange","lightgreen"),main="N=50",ylab="Isolated")
+
+##patterns for each video
+
+ggplot(PosProp,aes(x=Video,y=propI))+
+  geom_bar(stat="identity",aes(fill=Pos))+
+  ylab("Proportion of initiators")+
+  scale_fill_manual(values=c("cyan4","orange","purple"))+
+  theme_classic() # Classic theme
+
+ggplot(PosProp,aes(x=Video,y=propL))+
+  geom_bar(stat="identity",aes(fill=Pos))+
+  ylab("Proportion of late responders")+
+  scale_fill_manual(values=c("cyan4","orange","purple"))+
+  theme_classic() # Classic theme
