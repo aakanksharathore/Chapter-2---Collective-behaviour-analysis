@@ -1,5 +1,5 @@
 ## Code to measure group level properties in tracked videos
-## Vsiualise the time-series for these properties and then chnage point analysis
+## Visualize the time-series for these properties and then chnage point analysis
 #Written by AA on 20 March 2019
 library(sp)
 library(adehabitatHR)
@@ -8,16 +8,14 @@ library(zoo)
 library(changepoint)
 library(TTR)
 
-fname <- file.choose()
+fname <- file.choose()              #Video file - tracked and corrected .csv
 dat = read.csv(fname, header=TRUE)
-dat=na.omit(dat)
+##dat=na.omit(dat)
 head(dat)
 
-##User-input (input the frame number for approach frame)
-cp=1
 
 ##Clean the data
-cut_l=300 #(remove IDs which are there for less than 10 seconds)
+cut_l=150 #(remove IDs which are there for less than 5 seconds)
 dd=as.data.frame(table(dat$ID))
 trails=dd$Var1[dd$Freq>round(cut_l)]
 dat=subset(dat,ID %in% trails)
@@ -54,6 +52,9 @@ i_dat = na.omit(dat[dat$Frame==range[i],])
 
 #remove frames which have less than 3 individuals
 if(nrow(i_dat)<3){
+  
+  ##Input NA value here because we dont want to tamper the time-series
+  dat_out$Frame[i] = i_dat$Frame[1]
   next
 } 
 
@@ -173,20 +174,27 @@ abline(v=which(range==cp),col="red")
 
 ##################Group structure correlations####################################
 
-ran=7500:9000      ##change this range to calculate for specific events
+ran=1200:1800      ##change this range to calculate for specific events
 
 dt=dat_out[ran,]
 
 x=ccf(dt$pol,dt$medSpI,na.action = na.pass,lag.max=150)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))],max(abs(x$acf)),sep="->"))
 
 x=ccf(dt$mnnd,dt$pol,na.action = na.pass,lag.max=150)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))],max(abs(x$acf)),sep="->"))
 
 x=ccf(dt$mnnd,dt$medSpI,na.action = na.pass,lag.max=150)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))]))
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))],max(abs(x$acf)),sep="->"))
 
+####Plot the code for change-poibt in median speed of the group during escape phase
 
+library(changepoint)
+vec=SMA(dt$medSpI,n=30)
+vec[is.na(vec)] <- 0   ## replace NAs with 0
+mvalue=cpt.mean(vec, method="BinSeg",Q=5,penalty="None")
+plot(mvalue)
+ts=dt$Frame[mvalue@cpts[2]]     ## choose the second one because first is due to 0 values
 ###############################################################################
 ### Choose 5 random individuals
 

@@ -2,6 +2,8 @@ library(ggplot2)
 fname <- file.choose()   #Groupinteractionrules.csv
 GrpInt = read.csv(fname, header=TRUE)
 
+##Filter based on video type
+#GrpInt = GrpInt[GrpInt$Split=="No",]
 ##Group structure correlations
 
 GrpInt$CCF.Pol.mSPI.sign = ifelse(GrpInt$CCF.Pol.mSPI>0,"pos",ifelse(GrpInt$CCF.Pol.mSPI==0,"0","neg"))
@@ -52,6 +54,8 @@ ggplot(GrpInt, aes(x=factor(Event.type,levels=c("Pre","Esc","Coord","Post")), y=
   ylab("Nearest-neighbour distance~mSpeed")+stat_summary(aes(y = CCF.mnnd.mSPI,group=1), fun.y=median, colour="red", geom="point",group=1)+
   theme_classic() # Classic theme
   
+
+
 
 ##Patterns of lag
 ##Variatiin in CCF-lag across videos for different events
@@ -110,8 +114,16 @@ ggplot(PosDat, aes( y=na.omit(Pos..mid.edge..post), fill=Sex)) +
 
 ## Front-back position during coordinated walk
 ggplot(PosDat, aes( y=as.factor(na.omit(Pos..front.back..post)), fill=Sex)) + 
-  geom_bar(position="dodge", stat="count") + ggtitle("After the perturbation") +ylab("Position")+
-  scale_fill_viridis(discrete = TRUE)
+  geom_bar(position="stack", stat="count") + ggtitle("After the perturbation") +ylab("Position")+
+  scale_fill_viridis(discrete = TRUE)+
+  theme_classic()
+
+ggplot(PosDat, aes( y=as.factor(Sex), fill=na.omit(Pos..front.back..post))) + 
+  geom_bar(position="stack", stat="count")  +ylab("Age/Sex")+
+  scale_colour_manual(values = c("white","orange","cyan3","lightgreen"),aesthetics=c("colour","fill"))+ 
+  labs(fill="Position")+
+  theme_classic()+
+  coord_flip()
 
 ##consistency of position
 PosDat$Pos..mid.edge..post = factor(PosDat$Pos..mid.edge..post, levels=c("Edge", "Mid"))
@@ -134,8 +146,15 @@ for(i in 1:nrow(PosDat)){
 
 ggplot(PosDat, aes( y=cons, fill=Sex)) + 
   geom_bar(position="dodge", stat="count") + ggtitle("Consistency of positions") +ylab("Position")+
-  scale_fill_viridis(discrete = TRUE)
+  scale_fill_viridis(discrete = TRUE)+
+  coord_flip()+
+  theme_classic()
 
+ggplot(PosDat, aes( y=Sex, fill=cons)) + 
+  geom_bar(position="dodge", stat="count") + ggtitle("Consistency of positions") +ylab("Age/Sex")+
+  scale_colour_manual(values = c("cyan4","orange"),aesthetics=c("colour","fill"))+
+  coord_flip()+
+  theme_classic()
 
 ## Pairs
 fname <- file.choose()   ##Pairs.csv

@@ -70,9 +70,10 @@ barplot(table(dat1$Position.edge.inside.),xlab="Mid-periphery position",main=pas
 
 ################# Proportions wrt actual distribution
 fname <- file.choose()   ##PositionProportions.csv
-PosProp = read.csv(fname, header=TRUE)
+PosProp = read.csv(fname, header=TRUE,na.strings=c(""," ","NA"))
+PosProp = PosProp[!is.na(PosProp$Pos),]
 
-PosProp$Pos=factor(PosProp$Pos,levels=c("Far","Near","Mid"))
+#PosProp$Pos=factor(PosProp$Pos,levels=c("Far","Near","Mid"))
 
 barplot(tapply(PosProp$Number,PosProp$Pos,FUN = sum),col=c("cyan","orange","lightgreen"),ylim=c(0,200))
 
@@ -191,6 +192,7 @@ barplot(tapply(ASprop$LeaderP,ASprop$Sex,FUN = mean),col=c("cyan","orange","ligh
 barplot(tapply(ASprop$IsolatedP,ASprop$Sex,FUN = mean),col=c("cyan","orange","lightgreen","lightpink"),main="N=50",ylab="Isolated individuals")
 
 fname <- file.choose()   ##FrontBackPositionProportions.csv
+PosProp=NULL
 PosProp = read.csv(fname, header=TRUE)
 
 #PosProp$Pos=factor(PosProp$Pos,levels=c("Far","Near","Mid"))

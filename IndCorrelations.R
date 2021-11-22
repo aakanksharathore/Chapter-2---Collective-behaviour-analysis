@@ -6,14 +6,14 @@ fname <- file.choose()
 dat = read.csv(fname, header=TRUE)
 range=unique(dat$Frame)
 
-dat=na.omit(dat)
+#dat=na.omit(dat)
 dat_out=data.frame()
-cp=1  ##Approach frame
+#cp=1  ##Approach frame
 
 
 ##Clean the data (remove trajectories which are present less han 10% of time)
 #dat=subset(dat, Frame > range[1200])
-cut_l=300 #length(unique(dat$Frame))*0.2
+cut_l=150 #length(unique(dat$Frame))*0.2
 dd=as.data.frame(table(dat$ID))
 trails=dd$Var1[dd$Freq>round(cut_l)]
 dat=subset(dat,ID %in% trails)
@@ -55,8 +55,8 @@ for(i in 1:(length(range)-10)){
 head(vel)
 
 
-## choose preresponse+esc period to look at the initiation
-vel1=vel[vel$Frame %in% range[3600:5850],]
+## choose esc period to look at the initiation
+vel1=vel[vel$Frame %in% range[1200:1800],]
 fts = unique(vel1$ID)
 
 library(TTR)
@@ -66,7 +66,8 @@ for(i in 1:length(fts)){
   if(nrow(dt_temp)<31){
     next
   }
-  vel1$vs[vel1$ID==fts[i]] = SMA(dt_temp$v,n=30) ##smoothening to one second
+  dt_temp$v[is.na(dt_temp$v)]=0
+  vel1$vs[vel1$ID==fts[i]] = SMA(dt_temp$v,n=30) ##smoothening to take care of fluctuations
 
 }
 
@@ -75,28 +76,45 @@ for(i in 1:length(fts)){
 library(changepoint)
 cpts=data.frame()
 
+
+
 for(i in 1:length(fts)){
   
 dt_temp = vel1[vel1$ID==fts[i],] 
-dt_temp = na.omit(dt_temp)
+#dt_temp = na.omit(dt_temp)
 #if((nrow(dt_temp)<150) | (max(dt_temp$vs)<mean(na.omit(vel$vs)))){
 #  next
 #}     #commented on 24/06/2020, want to include all the individuals, however small there response may be
 
-if((nrow(dt_temp)<300)){     ##at least 10sec of data
+if((nrow(dt_temp)<90)){     ##at least 3 sec of data
   next
 }
 ##For speed
-mvalue=cpt.mean(dt_temp$vs, method="BinSeg",Q=5,penalty="None")
-plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n",main=paste(fts[i]))
+vec=dt_temp$vs
+vec[is.na(vec)]=0
+mvalue=cpt.mean(vec, method="BinSeg",Q=5,penalty="None")
+plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n",main=paste(fts[i]),ylim=c(0,max(na.omit(vel1$vs)))) 
 
 cpts[i,"id"]=fts[i]
-cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which(((dt_temp$vs[mvalue@cpts+1]-dt_temp$vs[(mvalue@cpts-1)])>0) & (dt_temp$vs[mvalue@cpts+1]>15))[1]]]
-#cpts[i,"v"]=dt_temp$vs[dt_temp$Frame==(cpts[i,"cp1"])]
+cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$vs[(mvalue@cpts+5)]-dt_temp$vs[(mvalue@cpts-5)])>0)[1]]]  ##making sure that change is positive jump
+
+
 
 }
 
-cpts$id[order(cpts$cp1)]
+
+##Code to see which timestamps are less than median change-point
+## we are trying to identify the individuals whi increase their speed before the group response
+## this means bfore the group median speed changes significantly* we identify this using change poin in median speed of the group)
+hist(cpts$cp1)
+median(hist(cpts$cp1))
+cpts$id[which(cpts$cp1<12242)]   ## Type this value based on change-point analysis fronm the previou code
+
+
+#############################
+
+inirank=cpts[order(cpts$cp1),]   ##or select from here upto value calculated in the previous step
+inirank$id[inirank$cp1<12242]
 #Hierarchy of change-points
 write.csv(file="Graphs/28MarchEve_01_02/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
 
