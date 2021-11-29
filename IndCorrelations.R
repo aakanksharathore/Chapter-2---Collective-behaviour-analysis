@@ -56,7 +56,7 @@ head(vel)
 
 
 ## choose esc period to look at the initiation
-vel1=vel[vel$Frame %in% range[1200:1800],]
+vel1=vel[vel$Frame %in% range[1000:2300],]
 fts = unique(vel1$ID)
 
 library(TTR)
@@ -93,28 +93,31 @@ if((nrow(dt_temp)<90)){     ##at least 3 sec of data
 vec=dt_temp$vs
 vec[is.na(vec)]=0
 mvalue=cpt.mean(vec, method="BinSeg",Q=5,penalty="None")
-plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n",main=paste(fts[i]),ylim=c(0,max(na.omit(vel1$vs)))) 
+plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n",main=paste(fts[i]),ylim=c(0,100)) 
 
 cpts[i,"id"]=fts[i]
-cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$vs[(mvalue@cpts+5)]-dt_temp$vs[(mvalue@cpts-5)])>0)[1]]]  ##making sure that change is positive jump
-
-
+#cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$vs[(mvalue@cpts+5)]-dt_temp$vs[(mvalue@cpts-5)])>10)[1]]]  ##How much change is necessary?? in terms of body lengths
+param.est(mvalue)
+#lst.cp = mvalue@cpts[which(diff(param.est(mvalue)$mean)>0)][-1]   ##identify the change-points woith positive jump and ignore first one
+#thresh.cp = mvalue@cpts[which(param.est(mvalue)$mean>10)]    ## set min velocity equal to body length
+pos.cp=mvalue@cpts[which((diff(param.est(mvalue)$mean)>0) & (param.est(mvalue)$mean>10))] ##position of positive changepoints with min speed of 10 i.e. one bodylength 29/11/2021
+cpts[i,"cp1"]=dt_temp$Frame[pos.cp][1]
 
 }
-
+cpts[order(cpts$cp1),]
 
 ##Code to see which timestamps are less than median change-point
 ## we are trying to identify the individuals whi increase their speed before the group response
 ## this means bfore the group median speed changes significantly* we identify this using change poin in median speed of the group)
-hist(cpts$cp1)
-median(hist(cpts$cp1))
-cpts$id[which(cpts$cp1<12242)]   ## Type this value based on change-point analysis fronm the previou code
+#hist(cpts$cp1)
+#median(hist(cpts$cp1))
+#cpts$id[which(cpts$cp1<25043)]   ## Type this value based on change-point analysis fronm the previou code
 
 
 #############################
 
 inirank=cpts[order(cpts$cp1),]   ##or select from here upto value calculated in the previous step
-inirank$id[inirank$cp1<12242]
+#inirank$id[inirank$cp1<25043]
 #Hierarchy of change-points
 write.csv(file="Graphs/28MarchEve_01_02/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
 
