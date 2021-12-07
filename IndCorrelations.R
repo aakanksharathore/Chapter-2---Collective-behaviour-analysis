@@ -6,6 +6,9 @@ fname <- file.choose()
 dat = read.csv(fname, header=TRUE)
 range=unique(dat$Frame)
 
+##Output path
+pname = "Graphs/28MarchEve_01_02/"
+
 #dat=na.omit(dat)
 dat_out=data.frame()
 #cp=1  ##Approach frame
@@ -56,7 +59,7 @@ head(vel)
 
 
 ## choose esc period to look at the initiation
-vel1=vel[vel$Frame %in% range[1000:2300],]
+vel1=vel[vel$Frame %in% range[1200:2250],]
 fts = unique(vel1$ID)
 
 library(TTR)
@@ -105,7 +108,7 @@ cpts[i,"cp1"]=dt_temp$Frame[pos.cp][1]
 
 }
 cpts[order(cpts$cp1),]
-
+median(cpts$cp1)
 ##Code to see which timestamps are less than median change-point
 ## we are trying to identify the individuals whi increase their speed before the group response
 ## this means bfore the group median speed changes significantly* we identify this using change poin in median speed of the group)
@@ -117,9 +120,11 @@ cpts[order(cpts$cp1),]
 #############################
 
 inirank=cpts[order(cpts$cp1),]   ##or select from here upto value calculated in the previous step
+##Take initiators as the individuals whose rank is less than 1/3rd quartile
+top=round(length(fts)/3)
 #inirank$id[inirank$cp1<25043]
 #Hierarchy of change-points
-write.csv(file="Graphs/28MarchEve_01_02/response_Initiation.csv", x=cpts$id[order(cpts$cp1)])
+write.csv(file=paste(pname,"response_Initiation.csv"), x=cpts$id[order(cpts$cp1)])
 
 
 
@@ -128,8 +133,8 @@ write.csv(file="Graphs/28MarchEve_01_02/response_Initiation.csv", x=cpts$id[orde
 ############################3For particlar events###########################
 ################################################################################
 #pairwise cross-correlations for escape events,  set these in the beginning
-st=range[6000]
-sp=range[7500]
+st=range[1200]
+sp=range[2250]
 vel1<-NA
 fts<-NA
 vel1=vel[vel$Frame %in% (st:sp),]
@@ -184,27 +189,23 @@ for(i in 1:length(fts)){
 
 ##Draw the network
 d=data.frame(lead,lag,lagv,corrs)
+write.csv(file=paste(pname,"network_matrix.csv"), x=d)
+
 
 ##Network analysis
 
 
 ##Put threshold on the correlation strength, high threshold for now = 0.5
-d=subset(d,corrs>0.5)
-d1=d[ , !(names(d) %in% "corrs")]
+d1=subset(d,corrs>0.5)
+d1=d1[ , !(names(d) %in% "corrs")]
 library('igraph')
 net <- graph_from_data_frame(d=d1, vertices=fts, directed=T) 
+net <- set_edge_attr(net, "weight", value= d1$lagv)              ##making it a weighted graph
 E(net)       # The edges of the "net" object
 V(net)       # The vertices of the "net" object
-#V(net)$size <- log(closeness(net,mode="out")*100)*30
-# node we'll create a new color variable as a node property
-V(net)$color[closeness(net,mode="out") %in% sort(closeness(net,mode="out"),decreasing=TRUE)[1:5]] <- "green"
-V(net)$color[closeness(net,mode="out") %in% sort(closeness(net,mode="out"),decreasing=FALSE)[1:5]] <- "red"
-
 E(net)$type  # Edge attribute "type"
-#V(net)$label <- ifelse( closeness(net,mode="out")==max(closeness(net,mode="out")), V(net)$name, NA )
-#graphCol = pal(fine)[as.numeric(cut(closeness(net,mode="out"),breaks = fine))]  
-plot(net,edge.arrow.size=.1,layout=layout_with_fr,edge.label=d$lagv)
-legend(x=1, y=.75, legend=c("Leader", "Influencers","Followers","Isolated"),pch=21, pt.bg=c("green","blue","red","white"), pt.cex=2, bty="n")
+
+plot(net,edge.size=3,layout=layout_with_fr,edge.label=d1$lagv)
 
 
 ##Community structure
@@ -212,132 +213,40 @@ coms=components(net,mode=c("weak","strong"))
 hist(coms$csize,xlab="Group size",col="cyan",main=paste("Network modularity, N=",length(fts)))
 table(coms$csize)
 
-sort(closeness(net,mode="out"),decreasing=TRUE)
-write.csv(file="Graphs/28MarchEve_01_02/InfluenceRank.csv", x=sort(closeness(net,mode="out"),decreasing =TRUE))
+#### Code foe identifying the influential individuals 01/12/2021
+
+## First calculate the number of total paths from each node, we will rank nodes in this order and look at the average path length for ties
+
+##Output data frame
+rankLeaders = data.frame(ID=as.vector(V(net)),npath=NA,dist=NA)
+
+for(i in 1:length(V(net))){
+  
+  
+spaths=distances(
+  net,
+  v = V(net)[i],
+  to = V(net),
+  mode = c("out"),
+  weights = d1$lagv,
+  algorithm = c("automatic", "unweighted", "dijkstra", "bellman-ford", "johnson")
+)
+
+rankLeaders$ID[i] = V(net)[i]
+rankLeaders$npath[i] = length(which(!is.infinite(spaths)))-1
+rankLeaders$dist[i] = mean(spaths[which(!is.infinite(spaths))])
+
+
+}
+
+## Sort on the basis of number of connections and mean length
+rankLeaders[order(rankLeaders$npath,rankLeaders$dist,decreasing = c(TRUE,FALSE)),]
+write.csv(file=paste(pname,"influence_rank.csv"), x=sort(closeness(net,mode="out"),decreasing =TRUE))
 
 
 ##Leader-follower pairs
 
-write.csv(file="Graphs/28MarchEve_01_02/Leader_follower_pairs.csv", x=d)
+write.csv(file=paste(pname,"LF_pairs.csv"), x=d)
 
 
 #########################################################################################
-###Sliding window approach for the network analysis
-ccNet=vector() #Average closeness centrality of the network
-N=length(range)-1
-slide=300
-w_size=900
-#num_iter=ceiling(N/slide)-w_size+slide+1  ##not able to calculate number of iterations
-curr_frame=1
-cn=0
-while(curr_frame<N){
-  vel1=vel[vel$Frame %in% range[curr_frame]:min(range[(curr_frame+w_size)],range[N],na.rm=TRUE),]
-  if((curr_frame+w_size)>N){
-    break
-  }
-  curr_frame=curr_frame+slide
-  cn=cn+1
-  
-  ##lead-lag analysis
-  lead=vector()
-  lag=vector()
-  lagv=numeric()
-  corrs=numeric()
-  ct=1
-  for(i in 1:length(fts)){
-    for(j in 1:length(fts)){
-      if(i<j){
-        dt_1 = vel1[vel1$ID==fts[i],]
-        dt_2 = vel1[vel1$ID==fts[j],]
-        if(nrow(dt_1)==0 | nrow(dt_2) == 0){
-          next
-        }
-        ##cross correlation for 2 individuals
-        x=ccf(dt_1$v,dt_2$v,na.action = na.pass,lag.max=30,plot=FALSE)   ##set max lag to correlation length later
-        l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
-        if(l<0){
-          #lead[i,j]=1 
-          lead[ct]=as.character(fts[i])
-          lag[ct]=as.character(fts[j])
-          lagv[ct]=abs(l)
-          corrs[ct]=max(abs(x$acf))
-          ct=ct+1
-        }else if(l>0){
-          #lead[i,j]=0
-          lead[ct]=as.character(fts[j])
-          lag[ct]=as.character(fts[i])
-          lagv[ct]=l
-          corrs[ct]=max(abs(x$acf))
-          ct=ct+1
-          #}else{
-          # lead[i,j]=-1
-        }
-        
-      }
-    }
-  }
-  
-  ##Draw the network
-  assign(paste("d",cn,sep="_"),data.frame(lead,lag,lagv,corrs))
-  
-  
-}
-
-library('igraph')
-##Save the graphs and closeness centrality rank time-series
-Inflnet<- data.frame(matrix(ncol = 3, nrow = 0))
-x <- c("window","ID","ccIndex")
-colnames(Inflnet) <- x
-for(i in 1:cn){
-  
-  ##Put threshold on the correlation strength, high threshold for now = 0.5
-  d=subset(get(paste("d",i,sep="_")),corrs>0.5)
-  net <- graph_from_data_frame(d=d, vertices=fts, directed=T) 
-  ##Color the vertices for their closeness centrality
-  fine = 1000 # this will adjust the resolving power.
-  pal = colorRampPalette(c('white','red','blue','green'))
-  
-  #this gives you the colors you want for every point
-  graphCol = pal(fine)[as.numeric(cut(closeness(net,mode="out"),breaks = fine))]  
-  setwd("/media/akanksharathore/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Phd/Analysis/3_CollectiveEscape/Graphs/10MarchEve1_03_04/individual_networks/")
-  png(filename=paste("d",i,".png",sep="_"))
-  plot(net,edge.arrow.size=.1,layout=layout_with_fr,edge.label=d$lagv,vertex.color=graphCol)
-  legend(x=1, y=.75, legend=c("Leader", "Influencers","Followers","Isolated"),pch=21, pt.bg=c("green","blue","red","white"), pt.cex=2, bty="n")
-  dev.off();
-  #closeness centrality
-  clCent = as.data.frame(closeness(net,mode="out"))
-  sort(closeness(net,mode="out"),decreasing =TRUE)
-  Inflnet=rbind(Inflnet,cbind(window=rep(paste("d",i,sep="_"),nrow(clCent)),ID=rownames(clCent),ccIndex=clCent$`closeness(net, mode = "out")`))
-  
-  # Community detection (by optimizing modularity over partitions):
- # ceb <- cluster_edge_betweenness(net)
-  #dendPlot(ceb, mode="hclust")
-  
-  
-}
-
-
-##Plot influence of all the individuals
-Inflnet$ccIndex=as.numeric(as.character(Inflnet$ccIndex))
-fts = unique(Inflnet$ID)
-#fts=c(5,12,27,28,30,34)#,24,25,26)
-for(i in 1:length(fts)){
-  dt_temp = Inflnet[Inflnet$ID==fts[i],]
-  xx=(1:length(dt_temp$ccIndex))
-  if(i==1){
-    plot(xx,dt_temp$ccIndex,col=fts[i],type="b",xaxt="n",pch=i,xlab="Slide window",ylab="Centrality index",ylim=c(0,max(Inflnet$ccIndex)))
-  }else{
-    points(xx,dt_temp$ccIndex,type="b",col=fts[i],pch=i)
-  }
-}
-
-mtext(text=unique(dt_temp$window),side=1,at=xx)
-legend("topright",legend=fts,col=fts,pch=(1:length(fts)))
-abline(v=cp,col="black")
-
-##Consistency of influence
-
-meanInfl=tapply(as.numeric(as.character(Inflnet$ccIndex)),Inflnet$ID,mean)  ##Typical value
-sdInfl=tapply(as.numeric(as.character(Inflnet$ccIndex)),Inflnet$ID,sd)    #consistency-lower the SD more consistent
-sort(meanInfl,decreasing=TRUE)
-sort(sdInfl)
