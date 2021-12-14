@@ -7,7 +7,7 @@ dat = read.csv(fname, header=TRUE)
 range=unique(dat$Frame)
 
 ##Output path
-pname = "Graphs/28MarchEve_01_02/"
+pname = "Manuscript/Results/06MarchEve2_06_07/"
 
 #dat=na.omit(dat)
 dat_out=data.frame()
@@ -59,7 +59,7 @@ head(vel)
 
 
 ## choose esc period to look at the initiation
-vel1=vel[vel$Frame %in% range[1200:2250],]
+vel1=vel[vel$Frame %in% range[500:2500],]
 fts = unique(vel1$ID)
 
 library(TTR)
@@ -96,7 +96,7 @@ if((nrow(dt_temp)<90)){     ##at least 3 sec of data
 vec=dt_temp$vs
 vec[is.na(vec)]=0
 mvalue=cpt.mean(vec, method="BinSeg",Q=5,penalty="None")
-plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n",main=paste(fts[i]),ylim=c(0,100)) 
+plot(mvalue,ylab="Speed",xlab="Frame number",xaxt="n",main=paste(fts[i]),ylim=c(0,40)) 
 
 cpts[i,"id"]=fts[i]
 #cpts[i,"cp1"]=dt_temp$Frame[mvalue@cpts[which((dt_temp$vs[(mvalue@cpts+5)]-dt_temp$vs[(mvalue@cpts-5)])>10)[1]]]  ##How much change is necessary?? in terms of body lengths
@@ -108,7 +108,7 @@ cpts[i,"cp1"]=dt_temp$Frame[pos.cp][1]
 
 }
 cpts[order(cpts$cp1),]
-median(cpts$cp1)
+median(na.omit(cpts$cp1))
 ##Code to see which timestamps are less than median change-point
 ## we are trying to identify the individuals whi increase their speed before the group response
 ## this means bfore the group median speed changes significantly* we identify this using change poin in median speed of the group)
@@ -124,7 +124,7 @@ inirank=cpts[order(cpts$cp1),]   ##or select from here upto value calculated in 
 top=round(length(fts)/3)
 #inirank$id[inirank$cp1<25043]
 #Hierarchy of change-points
-write.csv(file=paste(pname,"response_Initiation.csv"), x=cpts$id[order(cpts$cp1)])
+write.csv(file=paste(pname,"response_Initiation.csv"), x=cpts[order(cpts$cp1),])
 
 
 
@@ -133,8 +133,8 @@ write.csv(file=paste(pname,"response_Initiation.csv"), x=cpts$id[order(cpts$cp1)
 ############################3For particlar events###########################
 ################################################################################
 #pairwise cross-correlations for escape events,  set these in the beginning
-st=range[1200]
-sp=range[2250]
+st=range[7200]
+sp=range[9000]
 vel1<-NA
 fts<-NA
 vel1=vel[vel$Frame %in% (st:sp),]
@@ -205,7 +205,7 @@ E(net)       # The edges of the "net" object
 V(net)       # The vertices of the "net" object
 E(net)$type  # Edge attribute "type"
 
-plot(net,edge.size=3,layout=layout_with_fr,edge.label=d1$lagv)
+plot(net,edge.size=3,layout=layout.circle,edge.label=d1$lagv)
 
 
 ##Community structure
@@ -240,13 +240,13 @@ rankLeaders$dist[i] = mean(spaths[which(!is.infinite(spaths))])
 }
 
 ## Sort on the basis of number of connections and mean length
-rankLeaders[order(rankLeaders$npath,rankLeaders$dist,decreasing = c(TRUE,FALSE)),]
-write.csv(file=paste(pname,"influence_rank.csv"), x=sort(closeness(net,mode="out"),decreasing =TRUE))
+inrank=rankLeaders[order(rankLeaders$npath,rankLeaders$dist,decreasing = c(TRUE,FALSE)),]
+write.csv(file=paste(pname,"influence_rank.csv"), x=inrank)
 
 
 ##Leader-follower pairs
 
-write.csv(file=paste(pname,"LF_pairs.csv"), x=d)
+#write.csv(file=paste(pname,"LF_pairs.csv"), x=d)
 
 
 #########################################################################################
