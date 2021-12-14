@@ -203,7 +203,7 @@ E(net)       # The edges of the "net" object
 V(net)       # The vertices of the "net" object
 E(net)$type  # Edge attribute "type"
 
-plot(net,edge.size=3,layout=layout_as_tree,edge.label=d1$lagv)
+plot(net,edge.size=3,layout=layout_as_tree,edge.label=d1$lagv)  ## layout as tree
 
 
 ##Community structure
