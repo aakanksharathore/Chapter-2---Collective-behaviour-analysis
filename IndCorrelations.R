@@ -133,8 +133,8 @@ write.csv(file=paste(pname,"response_Initiation.csv"), x=cpts[order(cpts$cp1),])
 ############################3For particlar events###########################
 ################################################################################
 #pairwise cross-correlations for escape events,  set these in the beginning
-st=range[7200]
-sp=range[9000]
+st=range[500]
+sp=range[2500]
 vel1<-NA
 fts<-NA
 vel1=vel[vel$Frame %in% (st:sp),]
@@ -189,8 +189,6 @@ for(i in 1:length(fts)){
 
 ##Draw the network
 d=data.frame(lead,lag,lagv,corrs)
-write.csv(file=paste(pname,"network_matrix.csv"), x=d)
-
 
 ##Network analysis
 
@@ -205,7 +203,7 @@ E(net)       # The edges of the "net" object
 V(net)       # The vertices of the "net" object
 E(net)$type  # Edge attribute "type"
 
-plot(net,edge.size=3,layout=layout.circle,edge.label=d1$lagv)
+plot(net,edge.size=3,layout=layout_as_tree,edge.label=d1$lagv)
 
 
 ##Community structure
@@ -247,6 +245,8 @@ write.csv(file=paste(pname,"influence_rank.csv"), x=inrank)
 ##Leader-follower pairs
 
 #write.csv(file=paste(pname,"LF_pairs.csv"), x=d)
+write.csv(file=paste(pname,"network_matrix.csv"), x=d)
+
 
 
 #########################################################################################
