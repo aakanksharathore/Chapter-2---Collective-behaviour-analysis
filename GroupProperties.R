@@ -126,15 +126,18 @@ loc=seq(1,range[length(range)],by=1000)
 mm=floor((loc/30)/60)
 ss=round((loc/30)-mm*60)
 
+library(scales)
 # median NND time-series
 
 mnnd1=SMA(mnnd,n=300)
 mnnd1=na.omit(mnnd1)
 mvalue=cpt.mean(mnnd1, method="BinSeg",Q=5,penalty="None")
-plot(mvalue,ylab="median NND",xlab="Time")#,xaxt="n")
+plot(mvalue,ylab="median NND",xlab="Time",ylim=c(50,300))#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
 mvalue
+cols="lightblue"
+points(mnnd,type="p",col=alpha(cols, 0.3),pch=2)
 
 #Polarization time-series
 pol1=SMA(pol,n=300)
@@ -144,16 +147,16 @@ plot(mvalue,ylab="Polarization",xlab="Time",ylim=c(0,1))#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
 mvalue
-
+points(pol,type="p",col=alpha(cols, 0.1),pch=2)
 #Median individual speed
 medSpI1=SMA(medSpI,n=300)
 medSpI1=na.omit(medSpI1)
 mvalue=cpt.mean(medSpI1, method="BinSeg",Q=3,penalty="None")
-plot(mvalue,ylab="medSpI",xlab="Time")#,xaxt="n")
+plot(mvalue,ylab="medSpI",xlab="Time",ylim=c(0,120))#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
 mvalue
-
+points(medSpI,type="p",col=alpha(cols, 0.3),pch=2)
 #Elongation
 elon=na.omit(dat_out$elon)
 elon1=SMA(elon,n=300)
@@ -174,7 +177,7 @@ abline(v=which(range==cp),col="red")
 
 ##################Group structure correlations####################################
 
-ran=1200:1800      ##change this range to calculate for specific events
+ran=7500:9000      ##change this range to calculate for specific events
 
 dt=dat_out[ran,]
 
