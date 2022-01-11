@@ -7,6 +7,7 @@ library(spatstat)
 library(zoo)
 library(changepoint)
 library(TTR)
+library(astsa)
 
 fname <- file.choose()              #Video file - tracked and corrected .csv
 dat = read.csv(fname, header=TRUE)
@@ -132,12 +133,12 @@ library(scales)
 mnnd1=SMA(mnnd,n=300)
 mnnd1=na.omit(mnnd1)
 mvalue=cpt.mean(mnnd1, method="BinSeg",Q=5,penalty="None")
-plot(mvalue,ylab="median NND",xlab="Time",ylim=c(50,300))#,xaxt="n")
+plot(mvalue,ylab="median NND",xlab="Time",ylim=c(50,200))#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
 mvalue
 cols="lightblue"
-points(mnnd,type="p",col=alpha(cols, 0.3),pch=2)
+points(mnnd,type="p",col=alpha(cols, 0.1),pch=2)
 
 #Polarization time-series
 pol1=SMA(pol,n=300)
@@ -152,11 +153,11 @@ points(pol,type="p",col=alpha(cols, 0.1),pch=2)
 medSpI1=SMA(medSpI,n=300)
 medSpI1=na.omit(medSpI1)
 mvalue=cpt.mean(medSpI1, method="BinSeg",Q=3,penalty="None")
-plot(mvalue,ylab="medSpI",xlab="Time",ylim=c(0,120))#,xaxt="n")
+plot(mvalue,ylab="medSpI",xlab="Time",ylim=c(0,50))#,xaxt="n")
 mtext(text=paste(mm,":",ss),side=1,at=loc)
 abline(v=which(range==cp),col="red")
 mvalue
-points(medSpI,type="p",col=alpha(cols, 0.3),pch=2)
+points(medSpI,type="p",col=alpha(cols, 0.1),pch=2)
 #Elongation
 elon=na.omit(dat_out$elon)
 elon1=SMA(elon,n=300)
@@ -177,19 +178,25 @@ abline(v=which(range==cp),col="red")
 
 ##################Group structure correlations####################################
 
-ran=7500:9000      ##change this range to calculate for specific events
+ran=6500:7500                      ##change this range to calculate for specific events
 
 dt=dat_out[ran,]
 
 x=ccf(dt$pol,dt$medSpI,na.action = na.pass,lag.max=150)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))],max(abs(x$acf)),sep="->"))
+l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))],x$acf[x$lag==l],sep="   ->    "))
+#astsa::lag2.plot(dt$pol,dt$medSpI,12)
 
 x=ccf(dt$mnnd,dt$pol,na.action = na.pass,lag.max=150)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))],max(abs(x$acf)),sep="->"))
+l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))],x$acf[x$lag==l],sep="   ->    "))
 
 x=ccf(dt$mnnd,dt$medSpI,na.action = na.pass,lag.max=150)
-mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))],max(abs(x$acf)),sep="->"))
+l=x$lag[which(abs(x$acf)==max(abs(x$acf)))]
+mtext(paste(x$lag[which(abs(x$acf)==max(abs(x$acf)))],x$acf[x$lag==l],sep="   ->    "))
 
+mean(x$acf[x$lag>0])
+mean(x$acf[x$lag<0])
 ####Plot the code for change-poibt in median speed of the group during escape phase
 
 library(changepoint)
