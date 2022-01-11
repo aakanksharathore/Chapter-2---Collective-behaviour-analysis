@@ -7,7 +7,7 @@ dat = read.csv(fname, header=TRUE)
 range=unique(dat$Frame)
 
 ##Output path
-pname = "Manuscript/Results/06MarchEve2_06_07/"
+pname = "Manuscript/Results/28MarchEve_01_02/"
 
 #dat=na.omit(dat)
 dat_out=data.frame()
@@ -59,7 +59,8 @@ head(vel)
 
 
 ## choose esc period to look at the initiation
-vel1=vel[vel$Frame %in% range[500:2500],]
+vel1=vel[vel$Frame %in% range[1100:2200],]
+vel1=na.omit(vel1)
 fts = unique(vel1$ID)
 
 library(TTR)
@@ -133,8 +134,8 @@ write.csv(file=paste(pname,"response_Initiation.csv"), x=cpts[order(cpts$cp1),])
 ############################3For particlar events###########################
 ################################################################################
 #pairwise cross-correlations for escape events,  set these in the beginning
-st=range[500]
-sp=range[2500]
+st=range[6500]
+sp=range[7500]
 vel1<-NA
 fts<-NA
 vel1=vel[vel$Frame %in% (st:sp),]
@@ -208,7 +209,7 @@ plot(net,edge.size=3,layout=layout_as_tree,edge.label=d1$lagv)  ## layout as tre
 
 ##Community structure
 coms=components(net,mode=c("weak","strong"))
-hist(coms$csize,xlab="Group size",col="cyan",main=paste("Network modularity, N=",length(fts)))
+#hist(coms$csize,xlab="Group size",col="cyan",main=paste("Network modularity, N=",length(fts)))
 table(coms$csize)
 
 #### Code foe identifying the influential individuals 01/12/2021
@@ -216,7 +217,7 @@ table(coms$csize)
 ## First calculate the number of total paths from each node, we will rank nodes in this order and look at the average path length for ties
 
 ##Output data frame
-rankLeaders = data.frame(ID=as.vector(V(net)),npath=NA,dist=NA)
+rankLeaders = data.frame(ID=names(V(net)),npath=NA,dist=NA)                           ##changes on 5 Jan 2022
 
 for(i in 1:length(V(net))){
   
@@ -230,7 +231,7 @@ spaths=distances(
   algorithm = c("automatic", "unweighted", "dijkstra", "bellman-ford", "johnson")
 )
 
-rankLeaders$ID[i] = V(net)[i]
+#rankLeaders$ID[i] = V(net)[i]
 rankLeaders$npath[i] = length(which(!is.infinite(spaths)))-1
 rankLeaders$dist[i] = mean(spaths[which(!is.infinite(spaths))])
 
@@ -239,12 +240,10 @@ rankLeaders$dist[i] = mean(spaths[which(!is.infinite(spaths))])
 
 ## Sort on the basis of number of connections and mean length
 inrank=rankLeaders[order(rankLeaders$npath,rankLeaders$dist,decreasing = c(TRUE,FALSE)),]
-write.csv(file=paste(pname,"influence_rank.csv"), x=inrank)
-
+inrank
+write.csv(file=paste(pname,"influence_rank_cm.csv"), x=inrank)
 
 ##Leader-follower pairs
-
-#write.csv(file=paste(pname,"LF_pairs.csv"), x=d)
 write.csv(file=paste(pname,"network_matrix.csv"), x=d)
 
 
